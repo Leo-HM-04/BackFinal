@@ -82,3 +82,16 @@ exports.rechazarRecurrente = async (req, res) => {
     res.status(500).json({ error: "Error al rechazar la plantilla" });
   }
 };
+
+
+// 🗑️ Eliminar plantilla recurrente
+exports.eliminarRecurrente = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await RecurrenteModel.eliminarRecurrente(id);
+    res.json({ message: "Plantilla recurrente eliminada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al eliminar la plantilla recurrente" });
+  }
+};

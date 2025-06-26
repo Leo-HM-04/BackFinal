@@ -11,13 +11,17 @@ router.post("/", verificarToken, autorizarRol("solicitante"), controller.crearRe
 // Obtener plantillas del usuario autenticado
 router.get("/", verificarToken, controller.obtenerRecurrentes);
 
-// 🔎 Obtener todas las plantillas pendientes (solo aprobadores)
-router.get("/pendientes", verificarToken, autorizarRol("aprobador"), controller.obtenerPendientes);
+// 🔎 Obtener todas las plantillas pendientes (aprobadores y admin_general)
+router.get("/pendientes", verificarToken, autorizarRol("aprobador", "admin_general"), controller.obtenerPendientes);
 
-// ✅ Aprobar plantilla (solo aprobadores)
-router.put("/:id/aprobar", verificarToken, autorizarRol("aprobador"), controller.aprobarRecurrente);
+// ✅ Aprobar plantilla (aprobadores y admin_general)
+router.put("/:id/aprobar", verificarToken, autorizarRol("aprobador", "admin_general"), controller.aprobarRecurrente);
 
-// ❌ Rechazar plantilla (solo aprobadores)
-router.put("/:id/rechazar", verificarToken, autorizarRol("aprobador"), controller.rechazarRecurrente);
+// ❌ Rechazar plantilla (aprobadores y admin_general)
+router.put("/:id/rechazar", verificarToken, autorizarRol("aprobador", "admin_general"), controller.rechazarRecurrente);
+
+// 🗑️ Eliminar plantilla (solo solicitante o admin_general)
+router.delete("/:id", verificarToken, autorizarRol("solicitante", "admin_general"), controller.eliminarRecurrente);
+
 
 module.exports = router;

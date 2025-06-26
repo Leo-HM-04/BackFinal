@@ -53,3 +53,12 @@ exports.rechazarRecurrente = async (id_recurrente) => {
     [id_recurrente]
   );
 };
+
+
+// 🗑️ Eliminar plantilla recurrente por ID
+exports.eliminarRecurrente = async (id_recurrente) => {
+  await pool.query(
+    `DELETE FROM pagos_recurrentes WHERE id_recurrente = ?`,
+    [id_recurrente]
+  );
+};

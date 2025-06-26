@@ -8,19 +8,19 @@ const controller = require("../controllers/solicitud.controller");
 // Crear solicitud (solo solicitantes)
 router.post("/", verificarToken, autorizarRol("solicitante"), controller.createSolicitud);
 
-// Obtener todas o propias según el rol
+// Obtener todas o propias según el rol (sin restricción de rol, solo autenticación)
 router.get("/", verificarToken, controller.getSolicitudes);
 
-// Obtener una solicitud por ID
+// Obtener una solicitud por ID (también sin restricción de rol específica)
 router.get("/:id", verificarToken, controller.getSolicitud);
 
-// Aprobar o rechazar solicitud (solo aprobadores)
-router.put("/:id/estado", verificarToken, autorizarRol("aprobador"), controller.actualizarEstado);
+// ✅ Aprobar o rechazar solicitud (aprobadores y admin_general)
+router.put("/:id/estado", verificarToken, autorizarRol("aprobador", "admin_general"), controller.actualizarEstado);
 
-// Marcar como pagada (solo pagador_banca)
-router.put("/:id/pagar", verificarToken, controller.marcarComoPagada);
+// ✅ Marcar como pagada (pagador_banca y admin_general)
+router.put("/:id/pagar", verificarToken, autorizarRol("pagador_banca", "admin_general"), controller.marcarComoPagada);
 
-// Eliminar solicitud (solo admin_general)
-router.delete("/:id", verificarToken, autorizarRol("admin_general"), controller.deleteSolicitud);
+// ✅ Eliminar solicitud (solo admin_general)
+router.delete("/:id", verificarToken, autorizarRol("admin_general", "solicitante"), controller.deleteSolicitud);
 
 module.exports = router;
