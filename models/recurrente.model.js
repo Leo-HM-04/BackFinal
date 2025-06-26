@@ -21,11 +21,35 @@ exports.crearRecurrente = async (datos) => {
   );
 };
 
-// (Opcional) Obtener todas las plantillas activas del usuario
+// Obtener todas las plantillas activas del usuario
 exports.obtenerRecurrentesPorUsuario = async (id_usuario) => {
   const [rows] = await pool.query(
     `SELECT * FROM pagos_recurrentes WHERE id_usuario = ? AND activo = 1`,
     [id_usuario]
   );
   return rows;
+};
+
+// 🔎 Obtener plantillas pendientes (para los aprobadores)
+exports.obtenerPendientes = async () => {
+  const [rows] = await pool.query(
+    `SELECT * FROM pagos_recurrentes WHERE estado = 'pendiente'`
+  );
+  return rows;
+};
+
+// ✅ Aprobar plantilla
+exports.aprobarRecurrente = async (id_recurrente) => {
+  await pool.query(
+    `UPDATE pagos_recurrentes SET estado = 'aprobada' WHERE id_recurrente = ?`,
+    [id_recurrente]
+  );
+};
+
+// ❌ Rechazar plantilla
+exports.rechazarRecurrente = async (id_recurrente) => {
+  await pool.query(
+    `UPDATE pagos_recurrentes SET estado = 'rechazada' WHERE id_recurrente = ?`,
+    [id_recurrente]
+  );
 };

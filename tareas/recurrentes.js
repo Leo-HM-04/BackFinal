@@ -8,8 +8,8 @@ const ejecutarRecurrentes = async () => {
 
   try {
     const [plantillas] = await pool.query(
-      "SELECT * FROM pagos_recurrentes WHERE siguiente_fecha = ?",
-      [hoy]
+        "SELECT * FROM pagos_recurrentes WHERE siguiente_fecha = ? AND estado = 'aprobada'",
+        [hoy]
     );
 
     for (const plantilla of plantillas) {

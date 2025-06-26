@@ -1,10 +1,9 @@
-// controllers/recurrente.controller.js
 const RecurrenteModel = require("../models/recurrente.model");
 
 // Crear una nueva plantilla de pago recurrente
 exports.crearRecurrente = async (req, res) => {
   try {
-    const { id_usuario } = req.user;  // viene del token
+    const { id_usuario } = req.user;
     const {
       departamento,
       monto,
@@ -15,7 +14,6 @@ exports.crearRecurrente = async (req, res) => {
       siguiente_fecha,
     } = req.body;
 
-    // Validaciones básicas (opcional, puedes mejorar)
     if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !frecuencia || !siguiente_fecha) {
       return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
@@ -38,7 +36,7 @@ exports.crearRecurrente = async (req, res) => {
   }
 };
 
-// (Opcional) Obtener plantillas recurrentes del usuario autenticado
+// Obtener plantillas recurrentes del usuario autenticado
 exports.obtenerRecurrentes = async (req, res) => {
   try {
     const { id_usuario } = req.user;
@@ -47,5 +45,40 @@ exports.obtenerRecurrentes = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener las plantillas recurrentes" });
+  }
+};
+
+// 🔎 Obtener plantillas pendientes (solo aprobadores)
+exports.obtenerPendientes = async (req, res) => {
+  try {
+    const pendientes = await RecurrenteModel.obtenerPendientes();
+    res.json(pendientes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener las plantillas pendientes" });
+  }
+};
+
+// ✅ Aprobar plantilla
+exports.aprobarRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await RecurrenteModel.aprobarRecurrente(id);
+    res.json({ message: "Plantilla aprobada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al aprobar la plantilla" });
+  }
+};
+
+// ❌ Rechazar plantilla
+exports.rechazarRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await RecurrenteModel.rechazarRecurrente(id);
+    res.json({ message: "Plantilla rechazada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al rechazar la plantilla" });
   }
 };
