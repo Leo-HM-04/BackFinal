@@ -129,3 +129,16 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+exports.obtenerHistorial = async (req, res) => {
+  try {
+    const { rol, id_usuario } = req.user;
+    const esSolicitante = rol === "solicitante";
+
+    const historial = await RecurrenteModel.obtenerHistorial(id_usuario, esSolicitante);
+    res.json(historial);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener historial de ejecuciones" });
+  }
+};

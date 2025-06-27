@@ -6,7 +6,7 @@ const autorizarRol = require("../middlewares/autorizarRol");
 const controller = require("../controllers/solicitud.controller");
 
 // Crear solicitud (solo solicitantes)
-router.post("/", verificarToken, autorizarRol("solicitante"), controller.createSolicitud);
+router.post("/", verificarToken, autorizarRol("solicitante", "admin_general"), controller.createSolicitud);
 
 // Obtener todas o propias según el rol (sin restricción de rol, solo autenticación)
 router.get("/", verificarToken, controller.getSolicitudes);
@@ -22,5 +22,8 @@ router.put("/:id/pagar", verificarToken, autorizarRol("pagador_banca", "admin_ge
 
 // ✅ Eliminar solicitud (solo admin_general)
 router.delete("/:id", verificarToken, autorizarRol("admin_general", "solicitante"), controller.deleteSolicitud);
+
+// Editar solicitud (solo solicitante y si está pendiente)
+router.put("/:id", verificarToken, autorizarRol("solicitante"), controller.editarSolicitud);
 
 module.exports = router;

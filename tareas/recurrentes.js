@@ -8,16 +8,16 @@ const ejecutarRecurrentes = async () => {
 
   try {
     const [plantillas] = await pool.query(
-        "SELECT * FROM pagos_recurrentes WHERE siguiente_fecha = ? AND estado = 'aprobada'",
-        [hoy]
+      "SELECT * FROM pagos_recurrentes WHERE siguiente_fecha = ? AND estado = 'aprobada'",
+      [hoy]
     );
 
     for (const plantilla of plantillas) {
       // Crear solicitud
-      await pool.query(
+      const [resultado] = await pool.query(
         `INSERT INTO solicitudes_pago (
           id_usuario, departamento, monto, cuenta_destino, factura_url,
-          concepto, tipo_pago, fecha_limite_pago, soporte_url
+          concepto, tipo_pago, fecha_limite_pago, soporte_url, id_recurrente_origen
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           plantilla.id_usuario,
@@ -29,7 +29,17 @@ const ejecutarRecurrentes = async () => {
           plantilla.tipo_pago,
           hoy,
           null,
+          plantilla.id_recurrente // 👈 vínculo con la plantilla
         ]
+      );
+
+      const id_solicitud_generada = resultado.insertId;
+
+      // Registrar en historial de ejecuciones
+      await pool.query(
+        `INSERT INTO ejecuciones_recurrentes (id_recurrente, id_solicitud, fecha_ejecucion)
+         VALUES (?, ?, NOW())`,
+        [plantilla.id_recurrente, id_solicitud_generada]
       );
 
       // Calcular siguiente fecha según frecuencia
@@ -46,15 +56,16 @@ const ejecutarRecurrentes = async () => {
           break;
         default:
           console.warn("Frecuencia desconocida:", plantilla.frecuencia);
-          continue; 
-      } 
+          continue;
+      }
 
       // Actualizar siguiente_fecha
       await pool.query(
-  `UPDATE pagos_recurrentes SET siguiente_fecha = ? WHERE id_recurrente = ?`,
-  [siguiente.format("YYYY-MM-DD"), plantilla.id_recurrente]
-);
-      console.log(`✅ Generada solicitud para plantilla ${plantilla.id_plantilla}`);
+        `UPDATE pagos_recurrentes SET siguiente_fecha = ? WHERE id_recurrente = ?`,
+        [siguiente.format("YYYY-MM-DD"), plantilla.id_recurrente]
+      );
+
+      console.log(`✅ Generada solicitud y registrada ejecución para plantilla ${plantilla.id_recurrente}`);
     }
 
     console.log("✔️  Ejecución de tareas recurrentes completada.");
@@ -66,5 +77,4 @@ const ejecutarRecurrentes = async () => {
 module.exports = { ejecutarRecurrentes };
 
 // Ejecutar la tarea automáticamente cada día a las 00:05
-cron.schedule("5 0 * * *", ejecutarRecurrentes); // 👈 Esta ejecuta a las 00:05 todos los días
-
+cron.schedule("5 0 * * *", ejecutarRecurrentes);

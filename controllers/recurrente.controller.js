@@ -95,3 +95,81 @@ exports.eliminarRecurrente = async (req, res) => {
     res.status(500).json({ error: "Error al eliminar la plantilla recurrente" });
   }
 };
+
+// ✏️ Editar plantilla recurrente (solo si es del usuario y está pendiente)
+exports.editarRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario } = req.user;
+    const {
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      frecuencia,
+      siguiente_fecha,
+    } = req.body;
+
+    if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !frecuencia || !siguiente_fecha) {
+      return res.status(400).json({ error: "Faltan datos obligatorios" });
+    }
+
+    const filas = await RecurrenteModel.editarRecurrenteSiPendiente(id, id_usuario, {
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      frecuencia,
+      siguiente_fecha,
+    });
+
+    if (filas === 0) {
+      return res.status(403).json({ error: "No puedes editar esta plantilla. Asegúrate de que te pertenece y esté pendiente." });
+    }
+
+    res.json({ message: "Plantilla recurrente actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al editar la plantilla recurrente" });
+  }
+};
+
+
+// 📜 Obtener historial de ejecuciones (rol admin_general ve todo, los demás solo lo suyo)
+exports.obtenerHistorial = async (req, res) => {
+  try {
+    const { rol, id_usuario } = req.user;
+
+    let historial = [];
+
+    if (rol === "admin_general") {
+      historial = await RecurrenteModel.obtenerHistorialCompleto(); // Ver todo
+    } else {
+      historial = await RecurrenteModel.obtenerHistorialPorUsuario(id_usuario); // Solo lo suyo
+    }
+
+    res.json(historial);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener historial de ejecuciones" });
+  }
+};
+
+
+const SolicitudModel = require("../models/solicitud.model");
+
+exports.obtenerHistorial = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const historial = await SolicitudModel.getPorRecurrente(id);
+    res.json(historial);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener el historial de ejecuciones" });
+  }
+};
+
+

@@ -62,3 +62,60 @@ exports.eliminarRecurrente = async (id_recurrente) => {
     [id_recurrente]
   );
 };
+
+
+// ✏️ Editar plantilla recurrente (solo si es del usuario y está pendiente)
+exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) => {
+  const {
+    departamento,
+    monto,
+    cuenta_destino,
+    concepto,
+    tipo_pago,
+    frecuencia,
+    siguiente_fecha
+  } = datos;
+
+  const [result] = await pool.query(
+    `UPDATE pagos_recurrentes 
+     SET departamento = ?, monto = ?, cuenta_destino = ?, concepto = ?, tipo_pago = ?, frecuencia = ?, siguiente_fecha = ?
+     WHERE id_recurrente = ? AND id_usuario = ? AND estado = 'pendiente'`,
+    [
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      frecuencia,
+      siguiente_fecha,
+      id_recurrente,
+      id_usuario
+    ]
+  );
+
+  return result.affectedRows;
+};
+
+
+// 📜 Obtener historial completo (admin_general)
+exports.obtenerHistorialCompleto = async () => {
+  const [rows] = await pool.query(`
+    SELECT h.*, r.concepto, r.frecuencia, r.id_usuario
+    FROM historial_recurrentes h
+    JOIN pagos_recurrentes r ON h.id_recurrente = r.id_recurrente
+    ORDER BY h.fecha_ejecucion DESC
+  `);
+  return rows;
+};
+
+// 📜 Obtener historial por usuario
+exports.obtenerHistorialPorUsuario = async (id_usuario) => {
+  const [rows] = await pool.query(`
+    SELECT h.*, r.concepto, r.frecuencia
+    FROM historial_recurrentes h
+    JOIN pagos_recurrentes r ON h.id_recurrente = r.id_recurrente
+    WHERE r.id_usuario = ?
+    ORDER BY h.fecha_ejecucion DESC
+  `, [id_usuario]);
+  return rows;
+};

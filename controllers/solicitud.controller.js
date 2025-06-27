@@ -146,3 +146,50 @@ exports.deleteSolicitud = async (req, res) => {
     res.status(500).json({ error: "Error al eliminar la solicitud" });
   }
 };
+
+
+// ✏️ Editar una solicitud (solo el solicitante y si está pendiente)
+exports.editarSolicitud = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario } = req.user;
+
+    const {
+      departamento,
+      monto,
+      cuenta_destino,
+      factura_url,
+      concepto,
+      tipo_pago,
+      fecha_limite_pago,
+      soporte_url,
+    } = req.body;
+
+    const filasActualizadas = await SolicitudModel.editarSolicitudSiPendiente(
+      id,
+      id_usuario,
+      {
+        departamento,
+        monto,
+        cuenta_destino,
+        factura_url,
+        concepto,
+        tipo_pago,
+        fecha_limite_pago,
+        soporte_url,
+      }
+    );
+
+    if (filasActualizadas === 0) {
+      return res.status(400).json({
+        error: "No se puede editar: La solicitud no está pendiente o no te pertenece.",
+      });
+    }
+
+    res.json({ message: "Solicitud actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al editar la solicitud" });
+  }
+};
+
