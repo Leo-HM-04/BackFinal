@@ -18,9 +18,24 @@ wss.on("connection", (ws, request, userId) => {
 
 // Función para enviar notificación a un usuario
 function enviarNotificacion(id_usuario, mensaje) {
+  console.log(`🔍 Buscando conexión WebSocket para usuario ${id_usuario}...`);
+  console.log("👥 Usuarios conectados actualmente:", Array.from(usuariosConectados.keys()));
+
   const ws = usuariosConectados.get(id_usuario);
-  if (ws && ws.readyState === WebSocket.OPEN) {
+
+  if (!ws) {
+    console.log(`❌ No se encontró conexión WebSocket para el usuario ${id_usuario}`);
+    return;
+  }
+
+  console.log(`✅ Conexión encontrada para usuario ${id_usuario}`);
+  console.log(`📡 Estado del WebSocket: ${ws.readyState}`);
+
+  if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ tipo: "notificacion", mensaje }));
+    console.log(`📤 Notificación enviada a usuario ${id_usuario}: ${mensaje}`);
+  } else {
+    console.log(`⚠️ WebSocket no está en estado OPEN para el usuario ${id_usuario}`);
   }
 }
 

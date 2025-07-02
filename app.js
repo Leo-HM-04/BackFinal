@@ -1,7 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-
 const app = express();
+
+const path = require("path");
+
+// Servir archivos estáticos
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Middlewares
 app.use(cors());
@@ -21,3 +25,5 @@ app.use("/api/recurrentes", recurrenteRoutes); // 👈 NUEVO
 app.use("/api/tareas", tareasRoutes);
 
 module.exports = app;
+
+

@@ -5,7 +5,7 @@ const http = require("http");
 const jwt = require("jsonwebtoken");
 
 // WebSocket
-const { wss } = require("./ws");
+const { wss, enviarNotificacion } = require("./ws");
 
 const PORT = process.env.PORT || 4000;
 
@@ -24,6 +24,12 @@ server.on("upgrade", (request, socket, head) => {
 
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request, userId);
+
+      // ⏳ Esperar 3 segundos y luego enviar notificación de prueba
+      setTimeout(() => {
+        console.log("🚀 Enviando notificación de prueba a usuario", userId);
+        enviarNotificacion(userId, "🔔 Esta es una notificación de prueba desde el servidor.");
+      }, 3000);
     });
   } catch (err) {
     console.error("Token inválido en WebSocket:", err.message);

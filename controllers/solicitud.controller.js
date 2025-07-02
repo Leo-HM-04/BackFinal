@@ -1,4 +1,6 @@
 const SolicitudModel = require("../models/solicitud.model");
+const { enviarNotificacion } = require("../ws");
+const pool = require("../db/connection");
 
 // Obtener todas las solicitudes o solo las del usuario (según su rol)
 exports.getSolicitudes = async (req, res) => {
@@ -51,14 +53,17 @@ exports.createSolicitud = async (req, res) => {
       departamento,
       monto,
       cuenta_destino,
-      factura_url,
       concepto,
       tipo_pago,
       fecha_limite_pago,
-      soporte_url,
     } = req.body;
 
     const { id_usuario } = req.user;
+
+    let factura_url = null;
+    if (req.file) {
+      factura_url = `/uploads/facturas/${req.file.filename}`;
+    }
 
     await SolicitudModel.crear({
       id_usuario,
@@ -69,7 +74,14 @@ exports.createSolicitud = async (req, res) => {
       concepto,
       tipo_pago,
       fecha_limite_pago,
-      soporte_url,
+    });
+
+    // 🔔 Notificar a los aprobadores
+    const [aprobadores] = await pool.query(
+      "SELECT id_usuario FROM usuarios WHERE rol = 'aprobador'"
+    );
+    aprobadores.forEach(({ id_usuario }) => {
+      enviarNotificacion(id_usuario, "📥 Nueva solicitud pendiente de aprobación.");
     });
 
     res.status(201).json({ message: "Solicitud creada exitosamente" });
@@ -87,7 +99,7 @@ exports.actualizarEstado = async (req, res) => {
     const { id_usuario: id_aprobador } = req.user;
 
     if (!["autorizada", "rechazada"].includes(estado)) {
-      return res.status(400).json({ error: "Estado no válido. Debe ser 'autorizada' o 'rechazada'" });
+      return res.status(400).json({ error: "Estado no válido." });
     }
 
     const filasActualizadas = await SolicitudModel.actualizarEstado(
@@ -98,15 +110,36 @@ exports.actualizarEstado = async (req, res) => {
     );
 
     if (filasActualizadas === 0) {
-      return res.status(404).json({
-        error: "No se encontró la solicitud o ya tiene ese estado",
-      });
+      return res.status(404).json({ error: "Solicitud no encontrada o ya actualizada." });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT id_usuario FROM solicitudes_pago WHERE id_solicitud = ?",
+      [id]
+    );
+
+    if (rows.length) {
+      const idSolicitante = rows[0].id_usuario;
+
+      if (estado === "autorizada") {
+        enviarNotificacion(idSolicitante, "✅ Tu solicitud fue autorizada.");
+
+        // 🔔 Notificar a pagadores
+        const [pagadores] = await pool.query(
+          "SELECT id_usuario FROM usuarios WHERE rol = 'pagador_banca'"
+        );
+        pagadores.forEach(({ id_usuario }) => {
+          enviarNotificacion(id_usuario, "📝 Nueva solicitud autorizada para pago.");
+        });
+      } else {
+        enviarNotificacion(idSolicitante, "❌ Tu solicitud fue rechazada.");
+      }
     }
 
     res.json({ message: "Estado actualizado correctamente" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al actualizar el estado de la solicitud" });
+    res.status(500).json({ error: "Error al actualizar la solicitud" });
   }
 };
 
@@ -120,12 +153,24 @@ exports.marcarComoPagada = async (req, res) => {
       return res.status(403).json({ error: "No tienes permisos para marcar la solicitud como pagada" });
     }
 
-    const filasActualizadas = await SolicitudModel.marcarComoPagada(id, id_pagador);
+    const filas = await SolicitudModel.marcarComoPagada(id, id_pagador);
 
-    if (filasActualizadas === 0) {
-      return res.status(404).json({
-        error: "No se pudo marcar como pagada. Verifica que esté autorizada o que exista.",
-      });
+    if (filas === 0) {
+      return res.status(404).json({ error: "No se pudo marcar como pagada." });
+    }
+
+    // 🔔 Notificar al solicitante y aprobador
+    const [rows] = await pool.query(
+      "SELECT id_usuario, id_aprobador FROM solicitudes_pago WHERE id_solicitud = ?",
+      [id]
+    );
+
+    if (rows.length) {
+      const { id_usuario: idSolicitante, id_aprobador } = rows[0];
+      enviarNotificacion(idSolicitante, "💸 Tu solicitud ha sido pagada.");
+      if (id_aprobador) {
+        enviarNotificacion(id_aprobador, "💸 Se pagó la solicitud que aprobaste.");
+      }
     }
 
     res.json({ message: "Solicitud marcada como pagada correctamente" });
@@ -147,8 +192,7 @@ exports.deleteSolicitud = async (req, res) => {
   }
 };
 
-
-// ✏️ Editar una solicitud (solo el solicitante y si está pendiente)
+// Editar una solicitud (solo el solicitante y si está pendiente)
 exports.editarSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
@@ -158,12 +202,15 @@ exports.editarSolicitud = async (req, res) => {
       departamento,
       monto,
       cuenta_destino,
-      factura_url,
       concepto,
       tipo_pago,
       fecha_limite_pago,
-      soporte_url,
     } = req.body;
+
+    let factura_url = null;
+    if (req.file) {
+      factura_url = `/uploads/facturas/${req.file.filename}`;
+    }
 
     const filasActualizadas = await SolicitudModel.editarSolicitudSiPendiente(
       id,
@@ -176,7 +223,6 @@ exports.editarSolicitud = async (req, res) => {
         concepto,
         tipo_pago,
         fecha_limite_pago,
-        soporte_url,
       }
     );
 
@@ -192,4 +238,3 @@ exports.editarSolicitud = async (req, res) => {
     res.status(500).json({ error: "Error al editar la solicitud" });
   }
 };
-
