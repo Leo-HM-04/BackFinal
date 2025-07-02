@@ -1,8 +1,12 @@
+/* ──────────────────────────────────────────────────────────────
+   Controlador de Solicitudes – Con notificaciones persistentes
+   ────────────────────────────────────────────────────────────── */
+
 const SolicitudModel = require("../models/solicitud.model");
-const { enviarNotificacion } = require("../ws");
+const NotificacionService = require("../services/notificacionesService");
 const pool = require("../db/connection");
 
-// Obtener todas las solicitudes o solo las del usuario (según su rol)
+// ──────────────────────── Obtener listados ────────────────────────
 exports.getSolicitudes = async (req, res) => {
   try {
     const { rol, id_usuario } = req.user;
@@ -23,7 +27,7 @@ exports.getSolicitudes = async (req, res) => {
   }
 };
 
-// Obtener una solicitud por su ID
+// ─────────────────── Obtener solicitud por ID ──────────────────────
 exports.getSolicitud = async (req, res) => {
   try {
     const { rol, id_usuario } = req.user;
@@ -46,7 +50,7 @@ exports.getSolicitud = async (req, res) => {
   }
 };
 
-// Crear una nueva solicitud de pago
+// ───────────────────── Crear nueva solicitud ──────────────────────
 exports.createSolicitud = async (req, res) => {
   try {
     const {
@@ -76,13 +80,18 @@ exports.createSolicitud = async (req, res) => {
       fecha_limite_pago,
     });
 
-    // 🔔 Notificar a los aprobadores
+    /** 🔔 Notificar a TODOS los aprobadores */
     const [aprobadores] = await pool.query(
-      "SELECT id_usuario FROM usuarios WHERE rol = 'aprobador'"
+      "SELECT id_usuario, email FROM usuarios WHERE rol = 'aprobador'"
     );
-    aprobadores.forEach(({ id_usuario }) => {
-      enviarNotificacion(id_usuario, "📥 Nueva solicitud pendiente de aprobación.");
-    });
+
+    for (const ap of aprobadores) {
+      await NotificacionService.crearNotificacion({
+        id_usuario: ap.id_usuario,
+        mensaje: "📥 Nueva solicitud pendiente de aprobación.",
+        correo: ap.email,
+      });
+    }
 
     res.status(201).json({ message: "Solicitud creada exitosamente" });
   } catch (err) {
@@ -91,7 +100,7 @@ exports.createSolicitud = async (req, res) => {
   }
 };
 
-// Aprobar o rechazar una solicitud (solo aprobadores)
+// ─────── Aprobar o rechazar (solo aprobadores) ────────────────
 exports.actualizarEstado = async (req, res) => {
   try {
     const { id } = req.params;
@@ -102,38 +111,52 @@ exports.actualizarEstado = async (req, res) => {
       return res.status(400).json({ error: "Estado no válido." });
     }
 
-    const filasActualizadas = await SolicitudModel.actualizarEstado(
+    const filas = await SolicitudModel.actualizarEstado(
       id,
       estado,
       comentario_aprobador,
       id_aprobador
     );
-
-    if (filasActualizadas === 0) {
+    if (filas === 0) {
       return res.status(404).json({ error: "Solicitud no encontrada o ya actualizada." });
     }
 
-    const [rows] = await pool.query(
-      "SELECT id_usuario FROM solicitudes_pago WHERE id_solicitud = ?",
+    /** Datos del solicitante (y su email) */
+    const [sol] = await pool.query(
+      `SELECT s.id_usuario, u.email
+       FROM solicitudes_pago s
+       JOIN usuarios u ON u.id_usuario = s.id_usuario
+       WHERE s.id_solicitud = ?`,
       [id]
     );
+    const { id_usuario: idSolicitante, email } = sol[0];
 
-    if (rows.length) {
-      const idSolicitante = rows[0].id_usuario;
+    if (estado === "autorizada") {
+      // 1) Solicitante
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: "✅ Tu solicitud fue autorizada.",
+        correo: email,
+      });
 
-      if (estado === "autorizada") {
-        enviarNotificacion(idSolicitante, "✅ Tu solicitud fue autorizada.");
-
-        // 🔔 Notificar a pagadores
-        const [pagadores] = await pool.query(
-          "SELECT id_usuario FROM usuarios WHERE rol = 'pagador_banca'"
-        );
-        pagadores.forEach(({ id_usuario }) => {
-          enviarNotificacion(id_usuario, "📝 Nueva solicitud autorizada para pago.");
+      // 2) Pagadores
+      const [pagadores] = await pool.query(
+        "SELECT id_usuario, email FROM usuarios WHERE rol = 'pagador_banca'"
+      );
+      for (const pg of pagadores) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: pg.id_usuario,
+          mensaje: "📝 Nueva solicitud autorizada para pago.",
+          correo: pg.email,
         });
-      } else {
-        enviarNotificacion(idSolicitante, "❌ Tu solicitud fue rechazada.");
       }
+    } else {
+      // Rechazada → solo solicitante
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: "❌ Tu solicitud fue rechazada.",
+        correo: email,
+      });
     }
 
     res.json({ message: "Estado actualizado correctamente" });
@@ -143,7 +166,7 @@ exports.actualizarEstado = async (req, res) => {
   }
 };
 
-// Marcar una solicitud como pagada (solo pagador_banca)
+// ──────────────── Marcar como pagada (pagador) ─────────────────
 exports.marcarComoPagada = async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,22 +177,40 @@ exports.marcarComoPagada = async (req, res) => {
     }
 
     const filas = await SolicitudModel.marcarComoPagada(id, id_pagador);
-
     if (filas === 0) {
       return res.status(404).json({ error: "No se pudo marcar como pagada." });
     }
 
-    // 🔔 Notificar al solicitante y aprobador
+    /** Solicitante + aprobador (si existe) con sus emails */
     const [rows] = await pool.query(
-      "SELECT id_usuario, id_aprobador FROM solicitudes_pago WHERE id_solicitud = ?",
+      `SELECT s.id_usuario                       AS idSolicitante,
+              us.email                          AS emailSolic,
+              s.id_aprobador,
+              ua.email                          AS emailAprob
+       FROM solicitudes_pago s
+       JOIN usuarios us ON us.id_usuario = s.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = s.id_aprobador
+       WHERE s.id_solicitud = ?`,
       [id]
     );
 
     if (rows.length) {
-      const { id_usuario: idSolicitante, id_aprobador } = rows[0];
-      enviarNotificacion(idSolicitante, "💸 Tu solicitud ha sido pagada.");
+      const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
+
+      // Solicitante
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: "💸 Tu solicitud ha sido pagada.",
+        correo: emailSolic,
+      });
+
+      // Aprobador (si existe)
       if (id_aprobador) {
-        enviarNotificacion(id_aprobador, "💸 Se pagó la solicitud que aprobaste.");
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: "💸 Se pagó la solicitud que aprobaste.",
+          correo: emailAprob,
+        });
       }
     }
 
@@ -180,7 +221,7 @@ exports.marcarComoPagada = async (req, res) => {
   }
 };
 
-// Eliminar una solicitud (solo admin_general)
+// ─────────────────── Eliminar (solo admin) ──────────────────────
 exports.deleteSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
@@ -192,7 +233,7 @@ exports.deleteSolicitud = async (req, res) => {
   }
 };
 
-// Editar una solicitud (solo el solicitante y si está pendiente)
+// ───────────── Editar (solicitante y en pendiente) ────────────────
 exports.editarSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
@@ -212,7 +253,7 @@ exports.editarSolicitud = async (req, res) => {
       factura_url = `/uploads/facturas/${req.file.filename}`;
     }
 
-    const filasActualizadas = await SolicitudModel.editarSolicitudSiPendiente(
+    const filas = await SolicitudModel.editarSolicitudSiPendiente(
       id,
       id_usuario,
       {
@@ -226,7 +267,7 @@ exports.editarSolicitud = async (req, res) => {
       }
     );
 
-    if (filasActualizadas === 0) {
+    if (filas === 0) {
       return res.status(400).json({
         error: "No se puede editar: La solicitud no está pendiente o no te pertenece.",
       });
