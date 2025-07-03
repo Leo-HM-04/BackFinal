@@ -37,10 +37,10 @@ const createUsuario = async (nombre, email, password, rol) => {
 };
 
 // Actualizar un usuario
-const updateUsuario = async (id, nombre, email, rol) => {
+const updateUsuario = async (id, nombre, email, rol, password, bloqueado) => {
   const [result] = await pool.query(
-    "UPDATE usuarios SET nombre = ?, email = ?, rol = ? WHERE id_usuario = ?",
-    [nombre, email, rol, id]
+    "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ?, bloqueado = ? WHERE id_usuario = ?",
+    [nombre, email, rol, id, bloqueado, password]
   );
   return result.affectedRows;
 };

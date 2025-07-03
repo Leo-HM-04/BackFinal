@@ -66,10 +66,10 @@ const createUsuario = async (req, res) => {
 const updateUsuario = async (req, res) => {
   try {
     const id = req.params.id;
-    const { nombre, email, rol, password } = req.body;
+    const { nombre, email, rol, password, bloqueado } = req.body;
 
     console.log("Intentando actualizar usuario con ID:", id);
-    console.log("Datos recibidos:", { nombre, email, rol });
+    console.log("Datos recibidos:", { nombre, email, rol, bloqueado, password});
 
     // Validar que no haya más de un admin_general
     if (rol === "admin_general") {
@@ -87,7 +87,7 @@ const updateUsuario = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       await Usuario.updateUsuarioConPassword(id, nombre, email, rol, hashedPassword);
     } else {
-      await Usuario.updateUsuario(id, nombre, email, rol);
+      await Usuario.updateUsuario(id, nombre, email, rol, bloqueado);
     }
 
     res.json({ message: "Usuario actualizado correctamente" });
