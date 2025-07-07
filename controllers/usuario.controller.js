@@ -67,6 +67,8 @@ const updateUsuario = async (req, res) => {
   try {
     const id = req.params.id;
     const { nombre, email, rol, password, bloqueado } = req.body;
+    // Asegurar que bloqueado sea 1 o 0 (número)
+    const bloqueadoConvertido = bloqueado === "1" || bloqueado === 1 || bloqueado === true || bloqueado === "true" ? 1 : 0;
 
     console.log("Intentando actualizar usuario con ID:", id);
     console.log("Datos recibidos:", { nombre, email, rol, bloqueado, password});
@@ -84,11 +86,12 @@ const updateUsuario = async (req, res) => {
 
     // Si se proporciona una nueva contraseña, encriptarla y actualizarla
     if (password && password.trim() !== "") {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await Usuario.updateUsuarioConPassword(id, nombre, email, rol, hashedPassword);
-    } else {
-      await Usuario.updateUsuario(id, nombre, email, rol, bloqueado);
-    }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await Usuario.updateUsuario(id, nombre, email, rol, hashedPassword, bloqueadoConvertido);  // ✅ bien ordenado
+} else {
+  await Usuario.updateUsuario(id, nombre, email, rol, null, bloqueadoConvertido); // ✅ password = null si no se actualiza
+}
+
 
     res.json({ message: "Usuario actualizado correctamente" });
   } catch (error) {

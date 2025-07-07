@@ -2,7 +2,7 @@ const pool = require("../db/connection");
 
 // Obtener todos los usuarios
 const getAllUsuarios = async () => {
-  const [rows] = await pool.query("SELECT id_usuario, nombre, email, rol FROM usuarios");
+  const [rows] = await pool.query("SELECT * FROM usuarios");
   return rows;
 };
 
@@ -40,17 +40,18 @@ const createUsuario = async (nombre, email, password, rol) => {
 const updateUsuario = async (id, nombre, email, rol, password, bloqueado) => {
   const [result] = await pool.query(
     "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ?, bloqueado = ? WHERE id_usuario = ?",
-    [nombre, email, rol, id, bloqueado, password]
+    [nombre, email, rol, password, bloqueado, id]  // ← orden corregido
   );
   return result.affectedRows;
 };
 
 
+
 // Actualizar con nueva contraseña
-async function updateUsuarioConPassword(id, nombre, email, rol, password) {
+async function updateUsuarioConPassword(id, nombre, email, bloqueado, rol, password) {
   const [result] = await pool.query(
     "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ? WHERE id_usuario = ?",
-    [nombre, email, rol, password, id]
+    [nombre, email, rol, bloqueado, password, id]
   );
   return result.affectedRows;
 }
