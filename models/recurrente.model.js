@@ -24,7 +24,7 @@ exports.crearRecurrente = async (datos) => {
 // Obtener todas las plantillas activas del usuario
 exports.obtenerRecurrentesPorUsuario = async (id_usuario) => {
   const [rows] = await pool.query(
-    `SELECT * FROM pagos_recurrentes WHERE id_usuario = ? AND activo = 1`,
+    `SELECT * FROM pagos_recurrentes WHERE id_usuario = ?`,
     [id_usuario]
   );
   return rows;

@@ -15,7 +15,7 @@ const getUsuarioByRol = async (rol) => {
 // Obtener un usuario por ID
 const getUsuarioById = async (id) => {
   const [rows] = await pool.query(
-    "SELECT id_usuario, nombre, email, rol FROM usuarios WHERE id_usuario = ?",
+    "SELECT id_usuario, nombre, email, rol, creado_en, bloqueado FROM usuarios WHERE id_usuario = ?",
     [id]
   );
   return rows[0];
@@ -36,26 +36,22 @@ const createUsuario = async (nombre, email, password, rol) => {
   return result.insertId;
 };
 
-// Actualizar un usuario
+// Actualizar un usuario (solo cambia la contraseña si se proporciona)
 const updateUsuario = async (id, nombre, email, rol, password, bloqueado) => {
-  const [result] = await pool.query(
-    "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ?, bloqueado = ? WHERE id_usuario = ?",
-    [nombre, email, rol, password, bloqueado, id]  // ← orden corregido
-  );
+  let query = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, bloqueado = ?";
+  const values = [nombre, email, rol, bloqueado];
+
+  if (password && password.trim() !== "") {
+    query += ", password = ?";
+    values.push(password);
+  }
+
+  query += " WHERE id_usuario = ?";
+  values.push(id);
+
+  const [result] = await pool.query(query, values);
   return result.affectedRows;
 };
-
-
-
-// Actualizar con nueva contraseña
-async function updateUsuarioConPassword(id, nombre, email, bloqueado, rol, password) {
-  const [result] = await pool.query(
-    "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ? WHERE id_usuario = ?",
-    [nombre, email, rol, bloqueado, password, id]
-  );
-  return result.affectedRows;
-}
-
 
 // Eliminar un usuario
 const deleteUsuario = async (id) => {
@@ -67,10 +63,9 @@ const deleteUsuario = async (id) => {
 module.exports = {
   getAllUsuarios,
   getUsuarioById,
-  getUsuarioByEmail, // 👈 importante para validación en create
+  getUsuarioByEmail,
   getUsuarioByRol,
   createUsuario,
-  updateUsuarioConPassword,
   updateUsuario,
   deleteUsuario,
 };
