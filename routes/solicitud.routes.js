@@ -4,15 +4,15 @@ const router = express.Router();
 const verificarToken = require("../middlewares/authMiddleware");
 const autorizarRol = require("../middlewares/autorizarRol");
 const controller = require("../controllers/solicitud.controller");
-const upload = require("../middlewares/upload"); // Multer configurado
-
-// ✅ Crear solicitud con archivo (solo solicitantes y admin_general)
-router.post(
   "/",
   verificarToken,
   autorizarRol("solicitante", "admin_general"),
   upload.single("factura"), // Subida del archivo
   controller.createSolicitud
+const upload = require("../middlewares/upload"); // Multer configurado
+
+// ✅ Crear solicitud con archivo (solo solicitantes y admin_general)
+router.post(
 );
 
 // ✅ Obtener todas o propias según el rol
@@ -35,6 +35,14 @@ router.put(
   verificarToken,
   autorizarRol("pagador_banca", "admin_general"),
   controller.marcarComoPagada
+);
+
+// Eliminar solicitud (solo solicitante y pendiente)
+router.delete(
+  "/solicitante/:id",
+  verificarToken,
+  autorizarRol("solicitante"),
+  controller.deleteSolicitudSolicitante
 );
 
 // ✅ Eliminar solicitud

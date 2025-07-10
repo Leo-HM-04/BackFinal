@@ -17,12 +17,14 @@ const usuarioRoutes = require('./routes/usuario.routes');
 const solicitudRoutes = require('./routes/solicitud.routes');
 const recurrenteRoutes = require('./routes/recurrente.routes'); // 👈 NUEVO
 const tareasRoutes = require("./routes/tareas.routes");
+const departamentoRoutes = require('./routes/departamento.routes');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/recurrentes", recurrenteRoutes); // 👈 NUEVO
 app.use("/api/tareas", tareasRoutes);
+app.use("/api/departamentos", departamentoRoutes);
 
 module.exports = app;
 

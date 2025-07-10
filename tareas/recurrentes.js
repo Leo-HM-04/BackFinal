@@ -17,7 +17,7 @@ const ejecutarRecurrentes = async () => {
       const [resultado] = await pool.query(
         `INSERT INTO solicitudes_pago (
           id_usuario, departamento, monto, cuenta_destino, factura_url,
-          concepto, tipo_pago, fecha_limite_pago, soporte_url, id_recurrente_origen
+          concepto, tipo_pago, fecha_limite_pago, id_recurrente_origen
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           plantilla.id_usuario,
@@ -28,7 +28,6 @@ const ejecutarRecurrentes = async () => {
           plantilla.concepto,
           plantilla.tipo_pago,
           hoy,
-          null,
           plantilla.id_recurrente // 👈 vínculo con la plantilla
         ]
       );

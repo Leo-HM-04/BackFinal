@@ -233,11 +233,30 @@ exports.deleteSolicitud = async (req, res) => {
   }
 };
 
+// ───────────── Eliminar (solicitante y en pendiente) ────────────────
+exports.deleteSolicitudSolicitante = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario, rol } = req.user;
+    if (rol !== 'solicitante') {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar esta solicitud' });
+    }
+    const ok = await SolicitudModel.eliminarSiSolicitantePendiente(id, id_usuario);
+    if (!ok) {
+      return res.status(400).json({ error: 'Solo puedes eliminar solicitudes propias y en estado pendiente.' });
+    }
+    res.json({ message: 'Solicitud eliminada correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al eliminar la solicitud' });
+  }
+};
+
 // ───────────── Editar (solicitante y en pendiente) ────────────────
 exports.editarSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
-    const { id_usuario } = req.user;
+    const { id_usuario, rol } = req.user;
 
     const {
       departamento,
@@ -253,6 +272,7 @@ exports.editarSolicitud = async (req, res) => {
       factura_url = `/uploads/facturas/${req.file.filename}`;
     }
 
+    const esAdminGeneral = rol === "admin_general";
     const filas = await SolicitudModel.editarSolicitudSiPendiente(
       id,
       id_usuario,
@@ -264,12 +284,13 @@ exports.editarSolicitud = async (req, res) => {
         concepto,
         tipo_pago,
         fecha_limite_pago,
-      }
+      },
+      esAdminGeneral
     );
 
     if (filas === 0) {
       return res.status(400).json({
-        error: "No se puede editar: La solicitud no está pendiente o no te pertenece.",
+        error: "No se puede editar: La solicitud no está pendiente o no tienes permiso.",
       });
     }
 
