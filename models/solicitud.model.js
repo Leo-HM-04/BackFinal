@@ -158,3 +158,14 @@ exports.eliminarSiSolicitantePendiente = async (id_solicitud, id_usuario) => {
   );
   return result.affectedRows > 0;
 };
+
+// Obtener solo solicitudes pagadas
+exports.getPagadas = async () => {
+  const [rows] = await pool.query(`
+    SELECT s.*, u.nombre AS nombre_usuario 
+    FROM solicitudes_pago s
+    JOIN usuarios u ON s.id_usuario = u.id_usuario
+    WHERE s.estado = 'pagada'
+  `);
+  return rows;
+};

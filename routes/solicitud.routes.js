@@ -62,4 +62,21 @@ router.put(
   controller.editarSolicitud
 );
 
+// ✅ Subir comprobante de pago (pagador)
+router.put(
+  "/:id/comprobante",
+  verificarToken,
+  autorizarRol("pagador_banca", "admin_general"),
+  upload.single("comprobante"),
+  controller.subirComprobante
+);
+
+// ✅ Obtener solicitudes pagadas
+router.get(
+  "/pagadas",
+  verificarToken,
+  autorizarRol("pagador_banca", "admin_general"),
+  controller.getPagadas
+);
+
 module.exports = router;

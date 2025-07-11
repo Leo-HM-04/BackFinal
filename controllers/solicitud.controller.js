@@ -300,3 +300,39 @@ exports.editarSolicitud = async (req, res) => {
     res.status(500).json({ error: "Error al editar la solicitud" });
   }
 };
+
+// Subir comprobante de pago
+exports.subirComprobante = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const archivo = req.file;
+    if (!archivo) {
+      return res.status(400).json({ error: "No se recibió ningún archivo" });
+    }
+    // Guardar la URL del comprobante en la solicitud
+    const soporte_url = `/uploads/facturas/${archivo.filename}`;
+    await pool.query(
+      "UPDATE solicitudes_pago SET soporte_url = ? WHERE id_solicitud = ?",
+      [soporte_url, id]
+    );
+    res.json({ message: "Comprobante subido correctamente", soporte_url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al subir comprobante" });
+  }
+};
+
+// ────────────────────── Obtener solicitudes pagadas ─────────────────────
+exports.getPagadas = async (req, res) => {
+  try {
+    const { rol } = req.user;
+    if (rol !== 'pagador_banca' && rol !== 'admin_general') {
+      return res.status(403).json({ error: 'No tienes permisos para ver solicitudes pagadas' });
+    }
+    const solicitudes = await SolicitudModel.getPagadas();
+    res.json(solicitudes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener solicitudes pagadas' });
+  }
+};
