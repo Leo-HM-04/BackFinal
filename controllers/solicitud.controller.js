@@ -176,9 +176,17 @@ exports.marcarComoPagada = async (req, res) => {
       return res.status(403).json({ error: "No tienes permisos para marcar la solicitud como pagada" });
     }
 
+    console.log(`[LOG] Pagador intenta marcar como pagada la solicitud ${id}`);
     const filas = await SolicitudModel.marcarComoPagada(id, id_pagador);
     if (filas === 0) {
-      return res.status(404).json({ error: "No se pudo marcar como pagada." });
+      // Verifica el estado actual en BD para debug
+      const [rows] = await pool.query(
+        `SELECT estado FROM solicitudes_pago WHERE id_solicitud = ?`,
+        [id]
+      );
+      const estadoActual = rows[0]?.estado;
+      console.error(`[ERROR] No se pudo marcar como pagada. Estado actual: ${estadoActual}`);
+      return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
     }
 
     /** Solicitante + aprobador (si existe) con sus emails */
