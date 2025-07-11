@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-07-2025 a las 00:25:59
+-- Tiempo de generación: 11-07-2025 a las 08:54:13
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -64,7 +64,33 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leida
 (12, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:45:13'),
 (13, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:52:14'),
 (14, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:54:44'),
-(15, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 15:10:01');
+(15, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 15:10:01'),
+(16, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 21:03:03'),
+(17, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 21:06:46'),
+(18, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 21:06:47'),
+(19, 20, '❌ Tu solicitud fue rechazada.', 0, '2025-07-10 21:06:51'),
+(20, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-10 22:53:24'),
+(21, 5, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-10 22:53:30'),
+(22, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:01:55'),
+(23, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:01:58'),
+(24, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:01:59'),
+(25, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:02:00'),
+(26, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:02:01'),
+(27, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:02:01'),
+(28, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:01'),
+(29, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:01'),
+(30, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:02'),
+(31, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:02:02'),
+(32, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:02'),
+(33, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:03'),
+(34, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:04'),
+(35, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:06'),
+(36, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-10 23:02:17'),
+(37, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-10 23:02:18'),
+(38, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-10 23:22:43'),
+(39, 5, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-10 23:22:48'),
+(40, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-10 23:39:24'),
+(41, 5, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-10 23:39:30');
 
 -- --------------------------------------------------------
 
@@ -117,14 +143,15 @@ CREATE TABLE `solicitudes_pago` (
 --
 
 INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`) VALUES
-(11, 20, 'cobranza', 12342.00, '12345678907', '/uploads/facturas/1752171068008-464643402.png', 'prueba ', 'efectivo', '2025-08-09', 'pendiente', NULL, '2025-07-10 12:11:08', NULL, NULL, NULL, NULL, NULL),
+(11, 20, 'cobranza', 12342.00, '12345678907', '/uploads/facturas/1752171068008-464643402.png', 'prueba ', 'efectivo', '2025-08-09', 'pagada', 'Solicitud aprobada', '2025-07-10 12:11:08', 5, 6, '2025-07-10 21:06:46', '2025-07-10 22:53:24', NULL),
 (12, 20, 'automatizaciones', 42.00, '3454765', '/uploads/facturas/1752171426628-537657791.pdf', 'XDDD', 'efectivo', '2025-07-23', 'pendiente', NULL, '2025-07-10 12:17:06', NULL, NULL, NULL, NULL, NULL),
 (13, 20, 'automatizaciones', 1000.00, '1234567890', '/uploads/facturas/1752173100147-909676920.pdf', 'PRUEBA ', 'efectivo', '2025-08-09', 'pendiente', NULL, '2025-07-10 12:45:00', NULL, NULL, NULL, NULL, NULL),
-(14, 20, 'ti', 2222222.00, '1234567890', '/uploads/facturas/1752173198561-209150711.png', '98765432', '', '2025-08-09', 'pendiente', NULL, '2025-07-10 12:46:38', NULL, NULL, NULL, NULL, NULL),
+(14, 20, 'ti', 2222222.00, '1234567890', '/uploads/facturas/1752173198561-209150711.png', '98765432', '', '2025-08-09', 'autorizada', 'Solicitud rechazada', '2025-07-10 12:46:38', 5, NULL, '2025-07-10 21:06:51', NULL, NULL),
 (15, 20, 'vinculacion', 10033.00, '1234567890', '/uploads/facturas/1752173900916-983062405.png', 'test ', 'efectivo', '2025-08-09', 'pendiente', NULL, '2025-07-10 12:58:20', NULL, NULL, NULL, NULL, NULL),
-(17, 20, 'atencion a clientes', 1223344.00, '1234567890', '/uploads/facturas/1752176713500-269532798.png', 'test ', 'tarjeta', '2026-05-10', 'pendiente', NULL, '2025-07-10 13:45:13', NULL, NULL, NULL, NULL, NULL),
-(18, 20, 'cobranza', 400.00, '76543', '/uploads/facturas/1752177133885-761981579.png', 'esa', '', '2025-07-12', 'pendiente', NULL, '2025-07-10 13:52:13', NULL, NULL, NULL, NULL, NULL),
-(19, 20, 'comercial', 2000.00, '76543098765432198765432', '/uploads/facturas/1752185844451-591752214.pdf', '65432', 'nominas', '2025-07-12', 'pendiente', NULL, '2025-07-10 13:54:44', NULL, NULL, NULL, NULL, NULL);
+(17, 20, 'atencion a clientes', 1223344.00, '1234567890', '/uploads/facturas/1752176713500-269532798.png', 'test ', 'tarjeta', '2026-05-10', 'pagada', NULL, '2025-07-10 13:45:13', NULL, NULL, NULL, NULL, NULL),
+(18, 20, 'cobranza', 400.00, '76543', '/uploads/facturas/1752177133885-761981579.png', 'esa', '', '2025-07-12', 'pagada', 'Solicitud aprobada', '2025-07-10 13:52:13', 5, 6, '2025-07-10 23:02:02', '2025-07-10 23:22:43', NULL),
+(19, 20, 'comercial', 2000.00, '76543098765432198765432', '/uploads/facturas/1752185844451-591752214.pdf', '65432', 'nominas', '2025-07-12', 'pagada', 'Solicitud aprobada', '2025-07-10 13:54:44', 5, 6, '2025-07-10 23:02:17', '2025-07-10 23:39:24', NULL),
+(21, 25, 'ti', 500.00, '1234567890', '/uploads/facturas/1752203061957-298922629.jpg', 'TEST ', 'nominas', '2025-07-18', 'pendiente', NULL, '2025-07-10 21:03:03', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -157,7 +184,7 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `cre
 (22, 'panchito', 'panchito@bechapra.com', '$2b$10$ai3Ulwj/MwHo3zb8uPQyludVuzkEf1KtwvvurJkJ/.h4w1jIfGuV.', 'solicitante', '2025-07-08 22:38:13', 0, 0, NULL, 0),
 (23, 'luis enrike peña nito', 'kike@bechapra.com', '$2b$10$jJRguLAQGsKbJi8zfZFfKOyINTnQDHThxDDvarxWqonbnBoHdjI1i', 'solicitante', '2025-07-09 19:18:52', 0, 0, NULL, 0),
 (24, 'luis enrike peña nieoto', 'kiike@bechapra.com', '$2b$10$Jnl6nV/NeiQE0tnQ3G5zMe/O2XXoA0a0Gb4kAI7cZ75w6gdDHR0qG', 'solicitante', '2025-07-09 19:19:42', 0, 0, NULL, 0),
-(25, 'leonardo', 'leo@bechapra.com', '$2b$10$EescHmT8BKS63pocmipIOu47ST69Xud3/LKvVxyj7pg9zwt.QyRNC', 'solicitante', '2025-07-09 19:29:25', 0, 0, NULL, 0);
+(25, 'leonardo', 'leo@bechapra.com', '$2b$10$ym2ZU8v82RYrzdAEu3V2u.QMGP0oyZsmwMFGqd5xbp.vr4OC7taOO', 'solicitante', '2025-07-09 19:29:25', 0, 0, NULL, 0);
 
 --
 -- Índices para tablas volcadas
@@ -215,7 +242,7 @@ ALTER TABLE `ejecuciones_recurrentes`
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT de la tabla `pagos_recurrentes`
@@ -227,7 +254,7 @@ ALTER TABLE `pagos_recurrentes`
 -- AUTO_INCREMENT de la tabla `solicitudes_pago`
 --
 ALTER TABLE `solicitudes_pago`
-  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
