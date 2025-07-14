@@ -4,7 +4,7 @@ const path = require("path");
 // Configurar dónde y cómo se guarda el archivo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/facturas"); // ya creaste esta carpeta
+    cb(null, "uploads/comprobantes"); // nuevo directorio para comprobantes
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
