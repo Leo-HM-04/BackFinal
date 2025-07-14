@@ -169,3 +169,15 @@ exports.getPagadas = async () => {
   `);
   return rows;
 };
+
+// Obtener las solicitudes autorizadas y pagadas de pagador_banca
+exports.getAutorizadasYPagadas = async () => {
+  const [rows] = await pool.query(`
+    SELECT s.*, u.nombre AS nombre_usuario, a.nombre AS aprobador_nombre
+    FROM solicitudes_pago s
+    JOIN usuarios u ON s.id_usuario = u.id_usuario
+    LEFT JOIN usuarios a ON s.id_aprobador = a.id_usuario
+    WHERE s.estado IN ('autorizada', 'pagada')
+  `);
+  return rows;
+}

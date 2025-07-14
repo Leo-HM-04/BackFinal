@@ -344,3 +344,18 @@ exports.getPagadas = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener solicitudes pagadas' });
   }
 };
+
+// ────────────────────── Obtener solicitudes autorizadas y pagadas ─────────────────────
+exports.getAutorizadasYPagadas = async (req, res) => {
+  try {
+    const { rol } = req.user;
+    if (rol !== 'pagador_banca' && rol !== 'admin_general') {
+      return res.status(403).json({ error: 'No tienes permisos para ver estas solicitudes' });
+    }
+    const solicitudes = await SolicitudModel.getAutorizadasYPagadas();
+    res.json(solicitudes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener solicitudes autorizadas y pagadas' });
+  }
+};

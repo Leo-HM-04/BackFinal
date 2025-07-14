@@ -6,6 +6,14 @@ const autorizarRol = require("../middlewares/autorizarRol");
 const controller = require("../controllers/solicitud.controller");
 const upload = require("../middlewares/upload"); // Multer configurado (mover arriba)
 
+// ✅ Obtener solicitudes autorizadas y pagadas
+router.get(
+  "/autorizadas-pagadas",
+  verificarToken,
+  autorizarRol("pagador_banca", "admin_general"),
+  controller.getAutorizadasYPagadas
+);
+
 // ✅ Crear solicitud con archivo (solo solicitantes y admin_general)
 router.post(
   "/",
