@@ -1,3 +1,4 @@
+
 /* ──────────────────────────────────────────────────────────────
    Controlador de Plantillas Recurrentes
    Con notificaciones (BD + WS + correo) – Flujo acordado
@@ -22,9 +23,13 @@ exports.crearRecurrente = async (req, res) => {
       return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
+    let fact_recurrente = null;
+    if (req.file) {
+      fact_recurrente = `/uploads/recurrente/${req.file.filename}`;
+    }
     await RecurrenteModel.crearRecurrente({
       id_usuario, departamento, monto, cuenta_destino,
-      concepto, tipo_pago, frecuencia, siguiente_fecha,
+      concepto, tipo_pago, frecuencia, siguiente_fecha, fact_recurrente
     });
 
     /* 🔔 Aprobadores */
@@ -46,15 +51,37 @@ exports.crearRecurrente = async (req, res) => {
   }
 };
 
+
 /* ────────────── Obtener plantillas del usuario ────────────── */
 exports.obtenerRecurrentes = async (req, res) => {
   try {
-    const { id_usuario } = req.user;
-    const recurrentes = await RecurrenteModel.obtenerRecurrentesPorUsuario(id_usuario);
+    const { id_usuario, rol } = req.user;
+    let recurrentes;
+    if (rol === 'admin_general') {
+      recurrentes = await RecurrenteModel.obtenerTodas();
+    } else {
+      recurrentes = await RecurrenteModel.obtenerRecurrentesPorUsuario(id_usuario);
+    }
     res.json(recurrentes);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener las plantillas recurrentes" });
+  }
+};
+/* ────────────── Pausar o reactivar plantilla ────────────── */
+exports.cambiarEstadoActiva = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { activo } = req.body;
+    console.log('CONTROLADOR cambiarEstadoActiva:', { id, activo });
+    const recurrenteActualizado = await RecurrenteModel.cambiarEstadoActivo(id, activo);
+    res.json({
+      message: `Plantilla ${activo ? 'reactivada' : 'pausada'} correctamente`,
+      recurrente: recurrenteActualizado
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al cambiar el estado de la plantilla" });
   }
 };
 
@@ -176,9 +203,14 @@ exports.editarRecurrente = async (req, res) => {
       return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
+    let fact_recurrente = undefined;
+    if (req.file) {
+      fact_recurrente = `/uploads/recurrente/${req.file.filename}`;
+    }
     const filas = await RecurrenteModel.editarRecurrenteSiPendiente(id, id_usuario, {
       departamento, monto, cuenta_destino,
       concepto, tipo_pago, frecuencia, siguiente_fecha,
+      fact_recurrente
     });
 
     if (filas === 0) {
@@ -219,5 +251,46 @@ exports.obtenerHistorial = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener historial de ejecuciones" });
+  }
+};
+
+// Subir factura recurrente
+exports.subirFacturaRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario, rol } = req.user;
+    if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+    // Validar dueño o admin_general
+    const [rows] = await pool.query('SELECT id_usuario FROM pagos_recurrentes WHERE id_recurrente = ?', [id]);
+    if (!rows.length) return res.status(404).json({ error: 'Plantilla no encontrada' });
+    if (rol !== 'admin_general' && rows[0].id_usuario !== id_usuario) {
+      return res.status(403).json({ error: 'No tienes permiso para subir la factura' });
+    }
+
+    // Guardar ruta en la BD
+    const fact_recurrente = `/uploads/recurrente/${req.file.filename}`;
+    await require('../models/recurrente.model').subirFacturaRecurrente(id, fact_recurrente);
+    await pool.query('INSERT INTO auditoria_recurrentes (id_usuario, accion, fecha) VALUES (?, "subir_factura", NOW())', [id_usuario]);
+    res.json({ message: 'Factura recurrente subida correctamente', fact_recurrente });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al subir la factura recurrente' });
+  }
+};
+
+// Obtener una plantilla recurrente por id
+exports.obtenerRecurrentePorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario, rol } = req.user;
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) return res.status(404).json({ error: "No encontrada" });
+    if (rol !== "admin_general" && recurrente.id_usuario !== id_usuario) {
+      return res.status(403).json({ error: "No tienes permiso" });
+    }
+    res.json(recurrente);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener la plantilla" });
   }
 };

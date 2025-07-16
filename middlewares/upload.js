@@ -4,7 +4,12 @@ const path = require("path");
 // Configurar dónde y cómo se guarda el archivo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/comprobantes"); // nuevo directorio para comprobantes
+    // Si el campo es fact_recurrente, guardar en uploads/recurrente
+    if (file.fieldname === 'fact_recurrente') {
+      cb(null, "uploads/recurrente");
+    } else {
+      cb(null, "uploads/comprobantes");
+    }
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
