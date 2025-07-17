@@ -98,10 +98,12 @@ exports.obtenerPendientes = async (_req, res) => {
 
 /* ────────────── Aprobar plantilla ────────────── */
 exports.aprobarRecurrente = async (req, res) => {
+
   try {
     const { id } = req.params;
+    const { id_usuario } = req.user;
 
-    await RecurrenteModel.aprobarRecurrente(id);
+    await RecurrenteModel.aprobarRecurrente(id, id_usuario);
 
     /* Datos del solicitante */
     const [sol] = await pool.query(
@@ -144,10 +146,13 @@ exports.aprobarRecurrente = async (req, res) => {
 
 /* ────────────── Rechazar plantilla ────────────── */
 exports.rechazarRecurrente = async (req, res) => {
+
   try {
     const { id } = req.params;
+    const { id_usuario } = req.user;
+    const { comentario_aprobador } = req.body;
 
-    await RecurrenteModel.rechazarRecurrente(id);
+    await RecurrenteModel.rechazarRecurrente(id, id_usuario, comentario_aprobador);
 
     // 🔔 Notificar al solicitante solamente
     const [sol] = await pool.query(
@@ -292,5 +297,16 @@ exports.obtenerRecurrentePorId = async (req, res) => {
     res.json(recurrente);
   } catch (err) {
     res.status(500).json({ error: "Error al obtener la plantilla" });
+  }
+};
+
+/* ────────────── Obtener todas las plantillas (admin) ────────────── */
+exports.obtenerTodasRecurrentes = async (req, res) => {
+  try {
+    const recurrentes = await RecurrenteModel.obtenerTodas();
+    res.json(recurrentes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener todas las plantillas recurrentes" });
   }
 };

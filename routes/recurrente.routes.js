@@ -5,14 +5,22 @@ const autorizarRol = require("../middlewares/autorizarRol");
 const controller = require("../controllers/recurrente.controller");
 const upload = require("../middlewares/upload");
 
+
+// 📄 Obtener todas las plantillas (admin_general y aprobador)
+router.get("/todas", verificarToken, autorizarRol("admin_general", "aprobador"), controller.obtenerTodasRecurrentes);
+
 // Obtener una plantilla recurrente por id
 router.get("/:id", verificarToken, controller.obtenerRecurrentePorId);
 
 // 📝 Crear plantilla (solo solicitantes)
 router.post("/", verificarToken, autorizarRol("solicitante"), upload.single('fact_recurrente'), controller.crearRecurrente);
 
+
 // 📄 Obtener plantillas del usuario autenticado
 router.get("/", verificarToken, controller.obtenerRecurrentes);
+
+// 📄 Obtener todas las plantillas (solo admin_general)
+router.get("/todas", verificarToken, autorizarRol("admin_general"), controller.obtenerTodasRecurrentes);
 
 // 🔍 Obtener todas las plantillas pendientes (aprobadores y admin_general)
 router.get("/pendientes", verificarToken, autorizarRol("aprobador", "admin_general"), controller.obtenerPendientes);

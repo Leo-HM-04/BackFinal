@@ -84,18 +84,18 @@ exports.obtenerPendientes = async () => {
 };
 
 // ✅ Aprobar plantilla
-exports.aprobarRecurrente = async (id_recurrente) => {
+exports.aprobarRecurrente = async (id_recurrente, id_aprobador) => {
   await pool.query(
-    `UPDATE pagos_recurrentes SET estado = 'aprobada' WHERE id_recurrente = ?`,
-    [id_recurrente]
+    `UPDATE pagos_recurrentes SET estado = 'aprobada', id_aprobador = ?, fecha_revision = NOW() WHERE id_recurrente = ?`,
+    [id_aprobador, id_recurrente]
   );
 };
 
 // ❌ Rechazar plantilla
-exports.rechazarRecurrente = async (id_recurrente) => {
+exports.rechazarRecurrente = async (id_recurrente, id_aprobador, comentario_aprobador) => {
   await pool.query(
-    `UPDATE pagos_recurrentes SET estado = 'rechazada' WHERE id_recurrente = ?`,
-    [id_recurrente]
+    `UPDATE pagos_recurrentes SET estado = 'rechazada', id_aprobador = ?, comentario_aprobador = ?, fecha_revision = NOW() WHERE id_recurrente = ?`,
+    [id_aprobador, comentario_aprobador, id_recurrente]
   );
 };
 
@@ -167,24 +167,29 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
 
 // 📜 Obtener historial completo (admin_general)
 exports.obtenerHistorialCompleto = async () => {
-  const [rows] = await pool.query(`
-    SELECT h.*, r.concepto, r.frecuencia, r.id_usuario
-    FROM historial_recurrentes h
-    JOIN pagos_recurrentes r ON h.id_recurrente = r.id_recurrente
-    ORDER BY h.fecha_ejecucion DESC
-  `);
+  const [rows] = await pool.query(
+    'SELECT r.*, u.nombre AS nombre_usuario, a.nombre AS nombre_aprobador, p.nombre AS nombre_pagador ' +
+    'FROM pagos_recurrentes r ' +
+    'JOIN usuarios u ON r.id_usuario = u.id_usuario ' +
+    'LEFT JOIN usuarios a ON r.id_aprobador = a.id_usuario ' +
+    'LEFT JOIN usuarios p ON r.id_pagador = p.id_usuario'
+  );
   return rows;
 };
 
 // 📜 Obtener historial por usuario
 exports.obtenerHistorialPorUsuario = async (id_usuario) => {
-  const [rows] = await pool.query(`
-    SELECT h.*, r.concepto, r.frecuencia
-    FROM historial_recurrentes h
-    JOIN pagos_recurrentes r ON h.id_recurrente = r.id_recurrente
-    WHERE r.id_usuario = ?
-    ORDER BY h.fecha_ejecucion DESC
-  `, [id_usuario]);
+  const [rows] = await pool.query(
+    'SELECT h.*, r.concepto, r.frecuencia, r.id_usuario, u.nombre AS nombre_usuario, a.nombre AS nombre_aprobador, p.nombre AS nombre_pagador ' +
+    'FROM historial_recurrentes h ' +
+    'JOIN pagos_recurrentes r ON h.id_recurrente = r.id_recurrente ' +
+    'JOIN usuarios u ON r.id_usuario = u.id_usuario ' +
+    'LEFT JOIN usuarios a ON r.id_aprobador = a.id_usuario ' +
+    'LEFT JOIN usuarios p ON r.id_pagador = p.id_usuario ' +
+    'WHERE r.id_usuario = ? ' +
+    'ORDER BY h.fecha_ejecucion DESC',
+    [id_usuario]
+  );
   return rows;
 };
 
