@@ -185,15 +185,15 @@ exports.obtenerHistorialCompleto = async () => {
   return rows;
 };
 // Marcar una recurrente como pagada (solo por rol pagador_banca)
-exports.marcarComoPagadaRecurrente = async (id_recurrente, id_pagador) => {
-  const [result] = await pool.query(
-    `UPDATE pagos_recurrentes 
-     SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
-     WHERE id_recurrente = ? AND estado = 'aprobada'`,
-    [id_pagador, id_recurrente]
-  );
-  return result.affectedRows;
-};
+// exports.marcarComoPagadaRecurrente = async (id_recurrente, id_pagador) => {
+//   const [result] = await pool.query(
+//     `UPDATE pagos_recurrentes 
+//      SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
+//      WHERE id_recurrente = ? AND estado = 'aprobada'`,
+//     [id_pagador, id_recurrente]
+//   );
+//   return result.affectedRows;
+// };
 
 // 📜 Obtener historial por usuario
 exports.obtenerHistorialPorUsuario = async (id_usuario) => {

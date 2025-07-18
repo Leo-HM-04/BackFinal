@@ -30,13 +30,15 @@ router.get("/historial", verificarToken, controller.obtenerHistorial);
 
 // 📜 Historial de solicitudes generadas a partir de una plantilla recurrente
 router.get("/:id/historial", verificarToken, controller.obtenerHistorial);
+
+
 // Marcar como pagada (pagador_banca)
-router.put(
-  "/:id/pagar",
-  verificarToken,
-  autorizarRol("pagador_banca", "admin_general"),
-  controller.marcarComoPagadaRecurrente
-);
+// router.put(
+//   "/:id/pagar",
+//   verificarToken,
+//   autorizarRol("pagador_banca", "admin_general"),
+//   controller.marcarComoPagadaRecurrente
+// );
 
 // Subir factura recurrente (solicitante o admin_general)
 router.put('/:id/factura', verificarToken, autorizarRol('solicitante', 'admin_general'), upload.single('factura'), controller.subirFacturaRecurrente);

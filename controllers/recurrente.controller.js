@@ -64,63 +64,63 @@ exports.crearRecurrente = async (req, res) => {
   }
 };
 
-// ──────────────── Marcar como pagada (pagador) ─────────────────
-exports.marcarComoPagadaRecurrente = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rol, id_usuario: id_pagador } = req.user;
+//  ──────────────── Marcar como pagada (pagador) ─────────────────
+// exports.marcarComoPagadaRecurrente = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { rol, id_usuario: id_pagador } = req.user;
 
-    if (rol !== "pagador_banca") {
-      return res.status(403).json({ error: "No tienes permisos para marcar la recurrente como pagada" });
-    }
+//     if (rol !== "pagador_banca") {
+//       return res.status(403).json({ error: "No tienes permisos para marcar la recurrente como pagada" });
+//     }
 
-    const filas = await RecurrenteModel.marcarComoPagadaRecurrente(id, id_pagador);
-    if (filas === 0) {
-      // Verifica el estado actual en BD para debug
-      const [rows] = await pool.query(
-        `SELECT estado FROM pagos_recurrentes WHERE id_recurrente = ?`,
-        [id]
-      );
-      const estadoActual = rows[0]?.estado;
-      return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
-    }
+//     const filas = await RecurrenteModel.marcarComoPagadaRecurrente(id, id_pagador);
+//     if (filas === 0) {
+//       // Verifica el estado actual en BD para debug
+//       const [rows] = await pool.query(
+//         `SELECT estado FROM pagos_recurrentes WHERE id_recurrente = ?`,
+//         [id]
+//       );
+//       const estadoActual = rows[0]?.estado;
+//       return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
+//     }
 
     // Notificar a solicitante y aprobador (si existe)
-    const [rows] = await pool.query(
-      `SELECT r.id_usuario AS idSolicitante, us.email AS emailSolic, r.id_aprobador, ua.email AS emailAprob
-       FROM pagos_recurrentes r
-       JOIN usuarios us ON us.id_usuario = r.id_usuario
-       LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
-       WHERE r.id_recurrente = ?`,
-      [id]
-    );
+//     const [rows] = await pool.query(
+//       `SELECT r.id_usuario AS idSolicitante, us.email AS emailSolic, r.id_aprobador, ua.email AS emailAprob
+//        FROM pagos_recurrentes r
+//        JOIN usuarios us ON us.id_usuario = r.id_usuario
+//        LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
+//        WHERE r.id_recurrente = ?`,
+//       [id]
+//     );
 
-    if (rows.length) {
-      const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
+//     if (rows.length) {
+//       const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
 
-      // Solicitante
-      await NotificacionService.crearNotificacion({
-        id_usuario: idSolicitante,
-        mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
-        correo: emailSolic,
-      });
+//       // Solicitante
+//       await NotificacionService.crearNotificacion({
+//         id_usuario: idSolicitante,
+//         mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
+//         correo: emailSolic,
+//       });
 
-      // Aprobador (si existe)
-      if (id_aprobador) {
-        await NotificacionService.crearNotificacion({
-          id_usuario: id_aprobador,
-          mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
-          correo: emailAprob,
-        });
-      }
-    }
+//       // Aprobador (si existe)
+//       if (id_aprobador) {
+//         await NotificacionService.crearNotificacion({
+//           id_usuario: id_aprobador,
+//           mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
+//           correo: emailAprob,
+//         });
+//       }
+//     }
 
-    res.json({ message: "Plantilla recurrente marcada como pagada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al marcar la recurrente como pagada" });
-  }
-};
+//     res.json({ message: "Plantilla recurrente marcada como pagada correctamente" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Error al marcar la recurrente como pagada" });
+//   }
+// };
 
 
 /* ────────────── Obtener plantillas del usuario ────────────── */
