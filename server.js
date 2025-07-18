@@ -1,4 +1,5 @@
 const app = require("./app");
+const auditoriaNotificacionesRouter = require("./routes/auditoria_notificaciones.routes");
 require("dotenv").config();
 require("./tareas/recurrentes");
 const http = require("http");
@@ -8,6 +9,9 @@ const jwt = require("jsonwebtoken");
 const { wss, enviarNotificacion } = require("./ws");
 
 const PORT = process.env.PORT || 4000;
+
+// Registrar rutas de auditoría y notificaciones
+app.use("/api", auditoriaNotificacionesRouter);
 
 // Crear servidor HTTP manualmente
 const server = http.createServer(app);

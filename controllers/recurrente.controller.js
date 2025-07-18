@@ -1,4 +1,17 @@
-
+// ────────────── Obtener una plantilla recurrente por ID ──────────────
+exports.getRecurrentePorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: 'No se encontró la plantilla recurrente' });
+    }
+    res.json(recurrente);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener la plantilla recurrente' });
+  }
+};
 /* ──────────────────────────────────────────────────────────────
    Controlador de Plantillas Recurrentes
    Con notificaciones (BD + WS + correo) – Flujo acordado
@@ -48,6 +61,64 @@ exports.crearRecurrente = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al crear la plantilla recurrente" });
+  }
+};
+
+// ──────────────── Marcar como pagada (pagador) ─────────────────
+exports.marcarComoPagadaRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol, id_usuario: id_pagador } = req.user;
+
+    if (rol !== "pagador_banca") {
+      return res.status(403).json({ error: "No tienes permisos para marcar la recurrente como pagada" });
+    }
+
+    const filas = await RecurrenteModel.marcarComoPagadaRecurrente(id, id_pagador);
+    if (filas === 0) {
+      // Verifica el estado actual en BD para debug
+      const [rows] = await pool.query(
+        `SELECT estado FROM pagos_recurrentes WHERE id_recurrente = ?`,
+        [id]
+      );
+      const estadoActual = rows[0]?.estado;
+      return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
+    }
+
+    // Notificar a solicitante y aprobador (si existe)
+    const [rows] = await pool.query(
+      `SELECT r.id_usuario AS idSolicitante, us.email AS emailSolic, r.id_aprobador, ua.email AS emailAprob
+       FROM pagos_recurrentes r
+       JOIN usuarios us ON us.id_usuario = r.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
+       WHERE r.id_recurrente = ?`,
+      [id]
+    );
+
+    if (rows.length) {
+      const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
+
+      // Solicitante
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
+        correo: emailSolic,
+      });
+
+      // Aprobador (si existe)
+      if (id_aprobador) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
+          correo: emailAprob,
+        });
+      }
+    }
+
+    res.json({ message: "Plantilla recurrente marcada como pagada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al marcar la recurrente como pagada" });
   }
 };
 
@@ -308,5 +379,23 @@ exports.obtenerTodasRecurrentes = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener todas las plantillas recurrentes" });
+  }
+};
+
+// Obtener recurrentes aprobadas (solo pagador)
+exports.obtenerAprobadasParaPagador = async (req, res) => {
+  try {
+    // Solo mostrar las recurrentes aprobadas
+    const [rows] = await pool.query(
+      `SELECT r.*, u.nombre AS nombre_usuario, a.nombre AS nombre_aprobador, a.id_usuario AS id_aprobador
+       FROM pagos_recurrentes r
+       JOIN usuarios u ON r.id_usuario = u.id_usuario
+       LEFT JOIN usuarios a ON r.id_aprobador = a.id_usuario
+       WHERE r.estado = 'aprobada'`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener las recurrentes aprobadas" });
   }
 };

@@ -26,9 +26,12 @@ exports.crearRecurrente = async (datos) => {
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
   }
-  const fechaHoy = new Date();
+  // Comparar solo la parte de fecha (ignorar hora)
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
   const fechaSiguiente = new Date(siguiente_fecha);
-  if (fechaSiguiente < fechaHoy) {
+  fechaSiguiente.setHours(0,0,0,0);
+  if (fechaSiguiente < hoy) {
     throw new Error('La siguiente fecha debe ser igual o mayor a hoy');
   }
 
@@ -57,9 +60,10 @@ exports.obtenerRecurrentesPorUsuario = async (id_usuario) => {
 // Obtener todas las plantillas (solo admin_general)
 exports.obtenerTodas = async () => {
   const [rows] = await pool.query(
-    `SELECT r.*, u.nombre AS nombre_usuario
+    `SELECT r.*, u.nombre AS nombre_usuario, a.nombre AS nombre_aprobador, a.id_usuario AS id_aprobador
      FROM pagos_recurrentes r
-     JOIN usuarios u ON r.id_usuario = u.id_usuario`
+     JOIN usuarios u ON r.id_usuario = u.id_usuario
+     LEFT JOIN usuarios a ON r.id_aprobador = a.id_usuario`
   );
   return rows;
 };
@@ -86,7 +90,7 @@ exports.obtenerPendientes = async () => {
 // ✅ Aprobar plantilla
 exports.aprobarRecurrente = async (id_recurrente, id_aprobador) => {
   await pool.query(
-    `UPDATE pagos_recurrentes SET estado = 'aprobada', id_aprobador = ?, fecha_revision = NOW() WHERE id_recurrente = ?`,
+    `UPDATE pagos_recurrentes SET estado = 'aprobada', id_aprobador = ?, comentario_aprobador = 'Solicitud aprobada', fecha_revision = NOW() WHERE id_recurrente = ?`,
     [id_aprobador, id_recurrente]
   );
 };
@@ -135,9 +139,13 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
   }
-  const fechaHoy = new Date();
+  // Comparar solo la parte de fecha (ignorar hora)
+  // La siguiente fecha debe ser igual o mayor al día de hoy
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
   const fechaSiguiente = new Date(siguiente_fecha);
-  if (fechaSiguiente < fechaHoy) {
+  fechaSiguiente.setHours(0,0,0,0);
+  if (fechaSiguiente < hoy) {
     throw new Error('La siguiente fecha debe ser igual o mayor a hoy');
   }
 
@@ -175,6 +183,16 @@ exports.obtenerHistorialCompleto = async () => {
     'LEFT JOIN usuarios p ON r.id_pagador = p.id_usuario'
   );
   return rows;
+};
+// Marcar una recurrente como pagada (solo por rol pagador_banca)
+exports.marcarComoPagadaRecurrente = async (id_recurrente, id_pagador) => {
+  const [result] = await pool.query(
+    `UPDATE pagos_recurrentes 
+     SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
+     WHERE id_recurrente = ? AND estado = 'aprobada'`,
+    [id_pagador, id_recurrente]
+  );
+  return result.affectedRows;
 };
 
 // 📜 Obtener historial por usuario
