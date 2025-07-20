@@ -50,17 +50,27 @@ exports.getSolicitud = async (req, res) => {
   }
 };
 
+
 // ───────────────────── Crear nueva solicitud ──────────────────────
+const Joi = require('joi');
+const { registrarAccion } = require('../services/accionLogger');
+
 exports.createSolicitud = async (req, res) => {
   try {
-    const {
-      departamento,
-      monto,
-      cuenta_destino,
-      concepto,
-      tipo_pago,
-      fecha_limite_pago,
-    } = req.body;
+    // Validación robusta con Joi
+    const schema = Joi.object({
+      departamento: Joi.string().min(2).max(100).required(),
+      monto: Joi.number().positive().required(),
+      cuenta_destino: Joi.string().min(6).max(30).required(),
+      concepto: Joi.string().min(3).max(255).required(),
+      tipo_pago: Joi.string().min(2).max(50).optional(),
+      fecha_limite_pago: Joi.date().iso().optional(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: 'Datos inválidos', details: error.details });
+    }
+    const { departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago } = value;
 
     const { id_usuario } = req.user;
 
@@ -92,6 +102,15 @@ exports.createSolicitud = async (req, res) => {
         correo: ap.email,
       });
     }
+
+    // Registrar acción y notificar admin (solo registro, sin correo)
+    await registrarAccion({
+      req,
+      accion: 'creó',
+      entidad: 'solicitud',
+      entidadId: null,
+      mensajeExtra: ''
+    });
 
     res.status(201).json({ message: "Solicitud creada exitosamente" });
   } catch (err) {
@@ -158,6 +177,15 @@ exports.actualizarEstado = async (req, res) => {
         correo: email,
       });
     }
+
+    // Registrar acción y notificar admin (solo registro, sin correo)
+    await registrarAccion({
+      req,
+      accion: 'actualizó',
+      entidad: 'solicitud',
+      entidadId: id,
+      mensajeExtra: `Nuevo estado: ${estado}`
+    });
 
     res.json({ message: "Estado actualizado correctamente" });
   } catch (err) {
@@ -234,6 +262,14 @@ exports.deleteSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
     await SolicitudModel.eliminar(id);
+    // Registrar acción y notificar admin (solo registro, sin correo)
+    await registrarAccion({
+      req,
+      accion: 'eliminó',
+      entidad: 'solicitud',
+      entidadId: id,
+      mensajeExtra: ''
+    });
     res.json({ message: "Solicitud eliminada correctamente" });
   } catch (err) {
     console.error(err);

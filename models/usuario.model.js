@@ -27,11 +27,11 @@ const getUsuarioByEmail = async (email) => {
   return rows[0];
 };
 
-// Crear un nuevo usuario
-const createUsuario = async (nombre, email, password, rol) => {
+// Crear un nuevo usuario (puede marcarse como verificado y sin token)
+const createUsuario = async (nombre, email, password, rol, email_token = null, verificado = true) => {
   const [result] = await pool.query(
-    "INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)",
-    [nombre, email, password, rol]
+    "INSERT INTO usuarios (nombre, email, password, rol, email_token, verificado) VALUES (?, ?, ?, ?, ?, ?)",
+    [nombre, email, password, rol, email_token, verificado]
   );
   return result.insertId;
 };

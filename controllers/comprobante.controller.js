@@ -1,5 +1,8 @@
 const Comprobante = require('../models/comprobante.model');
 const path = require('path');
+const notificacionesService = require('../services/notificacionesService');
+const usuarioModel = require('../models/usuario.model');
+const { registrarAccion } = require('../services/accionLogger');
 
 exports.subirComprobante = async (req, res) => {
   try {
@@ -28,6 +31,17 @@ exports.subirComprobante = async (req, res) => {
       comentario
     };
     const id = await Comprobante.create(comprobante);
+
+
+    // Registrar acción y notificar admin
+    await registrarAccion({
+      req,
+      accion: 'subió',
+      entidad: 'comprobante',
+      entidadId: id,
+      mensajeExtra: `para la solicitud #${id_solicitud}`
+    });
+
     res.status(201).json({ id });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -48,8 +62,18 @@ exports.eliminarComprobante = async (req, res) => {
   try {
     const { id_comprobante } = req.params;
     const ok = await Comprobante.delete(id_comprobante);
-    if (ok) res.json({ success: true });
-    else res.status(404).json({ error: 'No encontrado' });
+    if (ok) {
+      // Registrar acción y notificar admin
+      await registrarAccion({
+        req,
+        accion: 'eliminó',
+        entidad: 'comprobante',
+        entidadId: id_comprobante
+      });
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'No encontrado' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,3 +1,17 @@
+exports.createDepartamento = (req, res) => {
+  // Implementación pendiente
+  res.status(501).json({ message: 'No implementado' });
+};
+
+exports.updateDepartamento = (req, res) => {
+  // Implementación pendiente
+  res.status(501).json({ message: 'No implementado' });
+};
+
+exports.deleteDepartamento = (req, res) => {
+  // Implementación pendiente
+  res.status(501).json({ message: 'No implementado' });
+};
 // Lista de departamentos válidos según la base de datos
 const departamentos = [
   'contabilidad',

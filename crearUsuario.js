@@ -3,8 +3,8 @@ const pool = require("./db/connection");
 
 const usuarios = [
   {
-    nombre: "Leonardo Admin",
-    email: "admin@bechapra.com",
+    nombre: "Administrador Bechapra",
+    email: "enrique.bechapra@gmail.com",
     password: "admin123",
     rol: "admin_general",
   },

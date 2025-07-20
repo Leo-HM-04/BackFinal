@@ -7,19 +7,38 @@ const MAX_INTENTOS_TEMPORAL = 3; // Intentos para el primer bloqueo temporal
 const MAX_INTENTOS_PERMANENTE = 1; // Un intento después del bloqueo temporal para el permanente
 const TIEMPO_BLOQUEO_MS = 15 * 1000; // 15 segundos
 
+const Joi = require('joi');
+
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  // Validación robusta con Joi
+  const schema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).max(100).required(),
+  });
+  const { error, value } = schema.validate(req.body);
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '';
+  if (error) {
+    // Auditar intento fallido por datos inválidos
+    try { await pool.query('INSERT INTO login_audit (email, ip, exito) VALUES (?, ?, ?)', [req.body.email || '', ip, false]); } catch (e) {}
+    return res.status(400).json({ message: 'Datos inválidos', details: error.details });
+  }
+  const { email, password } = value;
 
   try {
     const [rows] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
 
     if (rows.length === 0) {
-      // Si el email no existe, no contamos como intento fallido en una cuenta específica.
-      // Puedes ajustar esto si quieres mitigar enumeración de usuarios.
+      // Auditar intento fallido por usuario inexistente
+      try { await pool.query('INSERT INTO login_audit (email, ip, exito) VALUES (?, ?, ?)', [email, ip, false]); } catch (e) {}
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
+
     const user = rows[0];
+    // Verificar si el usuario está verificado
+    if (!user.verificado) {
+      return res.status(403).json({ message: 'Debes verificar tu correo antes de iniciar sesión.' });
+    }
 
     // 1. Verificar bloqueo permanente
     if (user.bloqueado) {
@@ -52,6 +71,8 @@ exports.login = async (req, res) => {
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
+      // Auditar intento fallido por contraseña incorrecta
+      try { await pool.query('INSERT INTO login_audit (email, ip, exito) VALUES (?, ?, ?)', [email, ip, false]); } catch (e) {}
       // Contraseña incorrecta
       let intentos = user.intentos_fallidos || 0;
       intentos++;
@@ -107,6 +128,9 @@ exports.login = async (req, res) => {
       SET intentos_fallidos = 0, bloqueo_temporal_fin = NULL, bloqueo_temporal_activado = FALSE
       WHERE id_usuario = ?
     `, [user.id_usuario]);
+
+    // Auditar intento exitoso
+    try { await pool.query('INSERT INTO login_audit (email, ip, exito) VALUES (?, ?, ?)', [email, ip, true]); } catch (e) {}
 
     const token = jwt.sign({
       id_usuario: user.id_usuario,
