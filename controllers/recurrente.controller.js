@@ -1,17 +1,4 @@
-// ────────────── Obtener una plantilla recurrente por ID ──────────────
-exports.getRecurrentePorId = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const recurrente = await RecurrenteModel.getPorId(id);
-    if (!recurrente) {
-      return res.status(404).json({ error: 'No se encontró la plantilla recurrente' });
-    }
-    res.json(recurrente);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener la plantilla recurrente' });
-  }
-};
+
 /* ──────────────────────────────────────────────────────────────
    Controlador de Plantillas Recurrentes
    Con notificaciones (BD + WS + correo) – Flujo acordado
@@ -45,6 +32,33 @@ exports.crearRecurrente = async (req, res) => {
       concepto, tipo_pago, frecuencia, siguiente_fecha, fact_recurrente
     });
 
+    // Detalles para el correo
+    const detallesRecurrente = `
+      <b>Departamento:</b> ${departamento}<br>
+      <b>Monto:</b> $${monto}<br>
+      <b>Cuenta destino:</b> ${cuenta_destino}<br>
+      <b>Concepto:</b> ${concepto}<br>
+      <b>Tipo de pago:</b> ${tipo_pago}<br>
+      <b>Frecuencia:</b> ${frecuencia}<br>
+      <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
+      ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
+    `;
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Nueva plantilla recurrente creada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha creado una nueva plantilla recurrente por el usuario ID ${id_usuario}:<br>${detallesRecurrente}`
+      });
+    }
+
     /* 🔔 Aprobadores */
     const [aprobadores] = await pool.query(
       "SELECT id_usuario, email FROM usuarios WHERE rol = 'aprobador'"
@@ -57,6 +71,15 @@ exports.crearRecurrente = async (req, res) => {
       });
     }
 
+    // Enviar correo al solicitante
+    const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    await enviarCorreo({
+      para: solicitante[0]?.email,
+      asunto: 'Plantilla recurrente registrada exitosamente',
+      nombre: solicitante[0]?.nombre,
+      link: url,
+      mensaje: `¡Tu plantilla recurrente fue registrada exitosamente!<br>${detallesRecurrente}`
+    });
     await NotificacionService.crearNotificacion({
       id_usuario,
       mensaje: "¡Tu plantilla recurrente fue registrada exitosamente!",
@@ -69,62 +92,124 @@ exports.crearRecurrente = async (req, res) => {
 };
 
 //  ──────────────── Marcar como pagada (pagador) ─────────────────
-// exports.marcarComoPagadaRecurrente = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { rol, id_usuario: id_pagador } = req.user;
+exports.marcarComoPagadaRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol, id_usuario: id_pagador } = req.user;
 
-//     if (rol !== "pagador_banca") {
-//       return res.status(403).json({ error: "No tienes permisos para marcar la recurrente como pagada" });
-//     }
+    if (rol !== "pagador_banca") {
+      return res.status(403).json({ error: "No tienes permisos para marcar la recurrente como pagada" });
+    }
 
-//     const filas = await RecurrenteModel.marcarComoPagadaRecurrente(id, id_pagador);
-//     if (filas === 0) {
-//       // Verifica el estado actual en BD para debug
-//       const [rows] = await pool.query(
-//         `SELECT estado FROM pagos_recurrentes WHERE id_recurrente = ?`,
-//         [id]
-//       );
-//       const estadoActual = rows[0]?.estado;
-//       return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
-//     }
+    const filas = await RecurrenteModel.marcarComoPagadaRecurrente(id, id_pagador);
+    if (filas === 0) {
+      // Verifica el estado actual en BD para debug
+      const [rows] = await pool.query(
+        `SELECT estado FROM pagos_recurrentes WHERE id_recurrente = ?`,
+        [id]
+      );
+      const estadoActual = rows[0]?.estado;
+      return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
+    }
 
-    // Notificar a solicitante y aprobador (si existe)
-//     const [rows] = await pool.query(
-//       `SELECT r.id_usuario AS idSolicitante, us.email AS emailSolic, r.id_aprobador, ua.email AS emailAprob
-//        FROM pagos_recurrentes r
-//        JOIN usuarios us ON us.id_usuario = r.id_usuario
-//        LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
-//        WHERE r.id_recurrente = ?`,
-//       [id]
-//     );
+    // Obtener detalles y correos
+    const [rows] = await pool.query(
+      `SELECT r.id_usuario AS idSolicitante,
+              us.email AS emailSolic,
+              us.nombre AS nombreSolic,
+              r.id_aprobador,
+              ua.email AS emailAprob,
+              ua.nombre AS nombreAprob,
+              r.departamento, r.monto, r.cuenta_destino, r.concepto, r.tipo_pago, r.frecuencia, r.siguiente_fecha, r.fact_recurrente
+       FROM pagos_recurrentes r
+       JOIN usuarios us ON us.id_usuario = r.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
+       WHERE r.id_recurrente = ?`,
+      [id]
+    );
 
-//     if (rows.length) {
-//       const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
+    if (rows.length) {
+      const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, fact_recurrente } = rows[0];
 
-//       // Solicitante
-//       await NotificacionService.crearNotificacion({
-//         id_usuario: idSolicitante,
-//         mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
-//         correo: emailSolic,
-//       });
+      // Obtener info de admin
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const detallesRecurrente = `
+        <b>ID:</b> ${id}<br>
+        <b>Departamento:</b> ${departamento}<br>
+        <b>Monto:</b> $${monto}<br>
+        <b>Cuenta destino:</b> ${cuenta_destino}<br>
+        <b>Concepto:</b> ${concepto}<br>
+        <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+        <b>Frecuencia:</b> ${frecuencia || '-'}<br>
+        <b>Siguiente fecha:</b> ${siguiente_fecha || '-'}<br>
+        ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
+      `;
+      const { enviarCorreo } = require('../services/correoService');
 
-//       // Aprobador (si existe)
-//       if (id_aprobador) {
-//         await NotificacionService.crearNotificacion({
-//           id_usuario: id_aprobador,
-//           mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
-//           correo: emailAprob,
-//         });
-//       }
-//     }
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Plantilla recurrente pagada',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `El pagador ID ${id_pagador} ha <b>marcado como pagada</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+        });
+      }
+      // Correo al aprobador (si existe)
+      if (id_aprobador && emailAprob) {
+        await enviarCorreo({
+          para: emailAprob,
+          asunto: 'Plantilla recurrente pagada',
+          nombre: nombreAprob,
+          link: url,
+          mensaje: `La plantilla recurrente que aprobaste ha sido <b>pagada</b>:<br>${detallesRecurrente}`
+        });
+      }
+      // Correo al solicitante
+      if (emailSolic) {
+        await enviarCorreo({
+          para: emailSolic,
+          asunto: 'Tu plantilla recurrente ha sido pagada',
+          nombre: nombreSolic,
+          link: url,
+          mensaje: `¡Tu plantilla recurrente ha sido <b>pagada</b>!<br>${detallesRecurrente}`
+        });
+      }
 
-//     res.json({ message: "Plantilla recurrente marcada como pagada correctamente" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Error al marcar la recurrente como pagada" });
-//   }
-// };
+      // Solicitante (notificación in-app)
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
+        correo: emailSolic,
+      });
+
+      // Aprobador (si existe, notificación in-app)
+      if (id_aprobador && emailAprob) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
+          correo: emailAprob,
+        });
+      }
+
+      // Pagador (su propio historial)
+      const [pagador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
+      await NotificacionService.crearNotificacion({
+        id_usuario: id_pagador,
+        mensaje: `✅ Marcaste como pagada la plantilla recurrente (ID: ${id}).`,
+        correo: pagador[0]?.email
+      });
+    }
+
+    res.json({ message: "Plantilla recurrente marcada como pagada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al marcar la recurrente como pagada" });
+  }
+};
 
 
 /* ────────────── Obtener plantillas del usuario ────────────── */
@@ -173,33 +258,75 @@ exports.obtenerPendientes = async (_req, res) => {
 
 /* ────────────── Aprobar plantilla ────────────── */
 exports.aprobarRecurrente = async (req, res) => {
-
   try {
     const { id } = req.params;
-    const { id_usuario } = req.user;
+    const { id_usuario } = req.user; // id_usuario es el aprobador
 
     await RecurrenteModel.aprobarRecurrente(id, id_usuario);
 
-    /* Datos del solicitante */
-    const [sol] = await pool.query(
-      `SELECT r.id_usuario, u.email
-       FROM pagos_recurrentes r
-       JOIN usuarios u ON u.id_usuario = r.id_usuario
-       WHERE r.id_recurrente = ?`,
-      [id]
-    );
-
-    if (sol.length) {
-      const { id_usuario, email } = sol[0];
-
-      /* 🔔 Solicitante */
-      await NotificacionService.crearNotificacion({
-        id_usuario,
-        mensaje: "✅ Tu plantilla recurrente fue aprobada.",
-        correo: email,
+    // Obtener detalles de la solicitud y usuarios
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: "Plantilla recurrente no encontrada" });
+    }
+    const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    const [solicitanteRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [recurrente.id_usuario]);
+    const url = 'https://bechapra.com';
+    const detallesRecurrente = `
+      <b>ID:</b> ${recurrente.id_recurrente || recurrente.id}<br>
+      <b>Departamento:</b> ${recurrente.departamento}<br>
+      <b>Monto:</b> $${recurrente.monto}<br>
+      <b>Cuenta destino:</b> ${recurrente.cuenta_destino}<br>
+      <b>Concepto:</b> ${recurrente.concepto}<br>
+      <b>Tipo de pago:</b> ${recurrente.tipo_pago}<br>
+      <b>Frecuencia:</b> ${recurrente.frecuencia}<br>
+      <b>Siguiente fecha:</b> ${recurrente.siguiente_fecha || ''}<br>
+      ${recurrente.fact_recurrente ? `<b>Factura adjunta:</b> ${recurrente.fact_recurrente}<br>` : ''}
+    `;
+    const { enviarCorreo } = require('../services/correoService');
+    // Correo al admin
+    if (adminRows.length > 0) {
+      const admin = adminRows[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Plantilla recurrente aprobada',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `El aprobador ID ${id_usuario} ha <b>aprobado</b> una plantilla recurrente:<br>${detallesRecurrente}`
+      });
+    }
+    // Correo al aprobador
+    if (aprobadorRows.length > 0) {
+      const aprobador = aprobadorRows[0];
+      await enviarCorreo({
+        para: aprobador.email,
+        asunto: 'Confirmación de aprobación de plantilla recurrente',
+        nombre: aprobador.nombre,
+        link: url,
+        mensaje: `Has <b>aprobado</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+      });
+    }
+    // Correo al solicitante
+    if (solicitanteRows.length > 0) {
+      const solicitante = solicitanteRows[0];
+      await enviarCorreo({
+        para: solicitante.email,
+        asunto: 'Tu plantilla recurrente fue aprobada',
+        nombre: solicitante.nombre,
+        link: url,
+        mensaje: `¡Tu plantilla recurrente fue <b>aprobada</b>!<br>${detallesRecurrente}`
       });
     }
 
+    /* 🔔 Solicitante (notificación in-app) */
+    if (solicitanteRows.length > 0) {
+      await NotificacionService.crearNotificacion({
+        id_usuario: recurrente.id_usuario,
+        mensaje: "✅ Tu plantilla recurrente fue aprobada.",
+        correo: solicitanteRows[0].email,
+      });
+    }
     /* 🔔 Pagadores */
     const [pagadores] = await pool.query(
       "SELECT id_usuario, email FROM usuarios WHERE rol = 'pagador_banca'"
@@ -221,30 +348,75 @@ exports.aprobarRecurrente = async (req, res) => {
 
 /* ────────────── Rechazar plantilla ────────────── */
 exports.rechazarRecurrente = async (req, res) => {
-
   try {
     const { id } = req.params;
-    const { id_usuario } = req.user;
+    const { id_usuario } = req.user; // id_usuario es el aprobador
     const { comentario_aprobador } = req.body;
 
     await RecurrenteModel.rechazarRecurrente(id, id_usuario, comentario_aprobador);
 
-    // 🔔 Notificar al solicitante solamente
-    const [sol] = await pool.query(
-      `SELECT r.id_usuario, u.email
-       FROM pagos_recurrentes r
-       JOIN usuarios u ON u.id_usuario = r.id_usuario
-       WHERE r.id_recurrente = ?`,
-      [id]
-    );
+    // Obtener detalles de la solicitud y usuarios
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: "Plantilla recurrente no encontrada" });
+    }
+    const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    const [solicitanteRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [recurrente.id_usuario]);
+    const url = 'https://bechapra.com';
+    const detallesRecurrente = `
+      <b>ID:</b> ${recurrente.id_recurrente || recurrente.id}<br>
+      <b>Departamento:</b> ${recurrente.departamento}<br>
+      <b>Monto:</b> $${recurrente.monto}<br>
+      <b>Cuenta destino:</b> ${recurrente.cuenta_destino}<br>
+      <b>Concepto:</b> ${recurrente.concepto}<br>
+      <b>Tipo de pago:</b> ${recurrente.tipo_pago}<br>
+      <b>Frecuencia:</b> ${recurrente.frecuencia}<br>
+      <b>Siguiente fecha:</b> ${recurrente.siguiente_fecha || ''}<br>
+      ${recurrente.fact_recurrente ? `<b>Factura adjunta:</b> ${recurrente.fact_recurrente}<br>` : ''}
+      <b>Comentario del aprobador:</b> ${comentario_aprobador || ''}<br>
+    `;
+    const { enviarCorreo } = require('../services/correoService');
+    // Correo al admin
+    if (adminRows.length > 0) {
+      const admin = adminRows[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Plantilla recurrente rechazada',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `El aprobador ID ${id_usuario} ha <b>rechazado</b> una plantilla recurrente:<br>${detallesRecurrente}`
+      });
+    }
+    // Correo al aprobador
+    if (aprobadorRows.length > 0) {
+      const aprobador = aprobadorRows[0];
+      await enviarCorreo({
+        para: aprobador.email,
+        asunto: 'Confirmación de rechazo de plantilla recurrente',
+        nombre: aprobador.nombre,
+        link: url,
+        mensaje: `Has <b>rechazado</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+      });
+    }
+    // Correo al solicitante
+    if (solicitanteRows.length > 0) {
+      const solicitante = solicitanteRows[0];
+      await enviarCorreo({
+        para: solicitante.email,
+        asunto: 'Tu plantilla recurrente fue rechazada',
+        nombre: solicitante.nombre,
+        link: url,
+        mensaje: `Tu plantilla recurrente fue <b>rechazada</b>.<br>${detallesRecurrente}`
+      });
+    }
 
-    if (sol.length) {
-      const { id_usuario, email } = sol[0];
-
+    // 🔔 Notificar al solicitante solamente (in-app)
+    if (solicitanteRows.length > 0) {
       await NotificacionService.crearNotificacion({
-        id_usuario,
+        id_usuario: recurrente.id_usuario,
         mensaje: "❌ Tu plantilla recurrente fue rechazada.",
-        correo: email,
+        correo: solicitanteRows[0].email,
       });
     }
 
@@ -260,6 +432,41 @@ exports.rechazarRecurrente = async (req, res) => {
 exports.eliminarRecurrente = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Obtener detalles antes de eliminar
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: "Plantilla recurrente no encontrada" });
+    }
+
+    // Enviar correo al admin_general con los detalles
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0) {
+      const admin = admins[0];
+      const detallesRecurrente = `
+        <b>ID:</b> ${recurrente.id_recurrente || recurrente.id}<br>
+        <b>Departamento:</b> ${recurrente.departamento}<br>
+        <b>Monto:</b> $${recurrente.monto}<br>
+        <b>Cuenta destino:</b> ${recurrente.cuenta_destino}<br>
+        <b>Concepto:</b> ${recurrente.concepto}<br>
+        <b>Tipo de pago:</b> ${recurrente.tipo_pago}<br>
+        <b>Frecuencia:</b> ${recurrente.frecuencia}<br>
+        <b>Siguiente fecha:</b> ${recurrente.siguiente_fecha || ''}<br>
+        <b>Usuario solicitante:</b> ${recurrente.id_usuario || ''}<br>
+        ${recurrente.fact_recurrente ? `<b>Factura adjunta:</b> ${recurrente.fact_recurrente}<br>` : ''}
+      `;
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Plantilla recurrente eliminada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha eliminado una plantilla recurrente con los siguientes detalles:<br>${detallesRecurrente}`
+      });
+    }
+
+    // Eliminar la plantilla
     await RecurrenteModel.eliminarRecurrente(id);
     res.json({ message: "Plantilla recurrente eliminada correctamente" });
   } catch (err) {
@@ -299,10 +506,48 @@ exports.editarRecurrente = async (req, res) => {
       });
     }
 
+    // Notificación in-app
     await NotificacionService.crearNotificacion({
       id_usuario,
       mensaje: "✏️ Tu plantilla recurrente fue actualizada.",
       correo: email,
+    });
+
+    // Detalles para el correo
+    const detallesRecurrente = `
+      <b>Departamento:</b> ${departamento}<br>
+      <b>Monto:</b> $${monto}<br>
+      <b>Cuenta destino:</b> ${cuenta_destino}<br>
+      <b>Concepto:</b> ${concepto}<br>
+      <b>Tipo de pago:</b> ${tipo_pago}<br>
+      <b>Frecuencia:</b> ${frecuencia}<br>
+      <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
+      ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
+    `;
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Plantilla recurrente actualizada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `El usuario ID ${id_usuario} ha actualizado una plantilla recurrente:<br>${detallesRecurrente}`
+      });
+    }
+
+    // Enviar correo al solicitante
+    const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    await enviarCorreo({
+      para: solicitante[0]?.email,
+      asunto: 'Tu plantilla recurrente fue actualizada',
+      nombre: solicitante[0]?.nombre,
+      link: url,
+      mensaje: `¡Tu plantilla recurrente fue actualizada exitosamente!<br>${detallesRecurrente}`
     });
 
     res.json({ message: "Plantilla recurrente actualizada correctamente" });
@@ -325,6 +570,42 @@ exports.obtenerHistorial = async (req, res) => {
       historial = await SolicitudModel.getPorRecurrente(id);
     } else {
       historial = await RecurrenteModel.obtenerHistorialPorUsuario(id_usuario);
+        // Detalles para el correo
+        const detallesRecurrente = `
+          <b>Departamento:</b> ${departamento}<br>
+          <b>Monto:</b> $${monto}<br>
+          <b>Cuenta destino:</b> ${cuenta_destino}<br>
+          <b>Concepto:</b> ${concepto}<br>
+          <b>Tipo de pago:</b> ${tipo_pago}<br>
+          <b>Frecuencia:</b> ${frecuencia}<br>
+          <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
+          ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
+        `;
+
+        // Enviar correo al admin_general
+        const { enviarCorreo } = require('../services/correoService');
+        const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+        const url = 'https://bechapra.com';
+        if (admins.length > 0) {
+            const admin = admins[0];
+            await enviarCorreo({
+                para: admin.email,
+                asunto: 'Plantilla recurrente actualizada en Bechapra',
+                nombre: admin.nombre,
+                link: url,
+                mensaje: `El usuario ID ${id_usuario} ha actualizado una plantilla recurrente:<br>${detallesRecurrente}`
+            });
+        }
+
+        // Enviar correo al solicitante
+        const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+        await enviarCorreo({
+            para: solicitante[0]?.email,
+            asunto: 'Tu plantilla recurrente fue actualizada',
+            nombre: solicitante[0]?.nombre,
+            link: url,
+            mensaje: `¡Tu plantilla recurrente fue actualizada exitosamente!<br>${detallesRecurrente}`
+        });
     }
 
     res.json(historial);
@@ -342,7 +623,7 @@ exports.subirFacturaRecurrente = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
 
     // Validar dueño o admin_general
-    const [rows] = await pool.query('SELECT id_usuario FROM pagos_recurrentes WHERE id_recurrente = ?', [id]);
+    const [rows] = await pool.query('SELECT id_usuario, id_aprobador FROM pagos_recurrentes WHERE id_recurrente = ?', [id]);
     if (!rows.length) return res.status(404).json({ error: 'Plantilla no encontrada' });
     if (rol !== 'admin_general' && rows[0].id_usuario !== id_usuario) {
       return res.status(403).json({ error: 'No tienes permiso para subir la factura' });
@@ -350,12 +631,87 @@ exports.subirFacturaRecurrente = async (req, res) => {
 
     // Guardar ruta en la BD
     const fact_recurrente = `/uploads/recurrente/${req.file.filename}`;
-    await require('../models/recurrente.model').subirFacturaRecurrente(id, fact_recurrente);
-    await pool.query('INSERT INTO auditoria_recurrentes (id_usuario, accion, fecha) VALUES (?, "subir_factura", NOW())', [id_usuario]);
-    res.json({ message: 'Factura recurrente subida correctamente', fact_recurrente });
+    await pool.query('UPDATE pagos_recurrentes SET fact_recurrente = ? WHERE id_recurrente = ?', [fact_recurrente, id]);
+
+    // Obtener detalles y correos
+    const [det] = await pool.query(
+      `SELECT r.id_usuario AS idSolicitante,
+              us.email AS emailSolic,
+              us.nombre AS nombreSolic,
+              r.id_aprobador,
+              ua.email AS emailAprob,
+              ua.nombre AS nombreAprob,
+              r.departamento, r.monto, r.cuenta_destino, r.concepto, r.tipo_pago, r.frecuencia, r.siguiente_fecha
+       FROM pagos_recurrentes r
+       JOIN usuarios us ON us.id_usuario = r.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
+       WHERE r.id_recurrente = ?`,
+      [id]
+    );
+
+    if (det.length) {
+      const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha } = det[0];
+
+      // Obtener info de admin
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const detallesRecurrente = `
+        <b>ID:</b> ${id}<br>
+        <b>Departamento:</b> ${departamento}<br>
+        <b>Monto:</b> $${monto}<br>
+        <b>Cuenta destino:</b> ${cuenta_destino}<br>
+        <b>Concepto:</b> ${concepto}<br>
+        <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+        <b>Frecuencia:</b> ${frecuencia || '-'}<br>
+        <b>Siguiente fecha:</b> ${siguiente_fecha || '-'}<br>
+        <b>Factura adjunta:</b> ${fact_recurrente}<br>
+      `;
+      const { enviarCorreo } = require('../services/correoService');
+
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Comprobante subido a plantilla recurrente',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+        });
+      }
+      // Correo al aprobador (si existe)
+      if (id_aprobador && emailAprob) {
+        await enviarCorreo({
+          para: emailAprob,
+          asunto: 'Comprobante subido a plantilla recurrente',
+          nombre: nombreAprob,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la plantilla recurrente que aprobaste:<br>${detallesRecurrente}`
+        });
+      }
+      // Correo al solicitante
+      if (emailSolic) {
+        await enviarCorreo({
+          para: emailSolic,
+          asunto: 'Comprobante subido a tu plantilla recurrente',
+          nombre: nombreSolic,
+          link: url,
+          mensaje: `Se ha subido un comprobante a tu plantilla recurrente:<br>${detallesRecurrente}`
+        });
+      }
+    }
+
+    // Enviar notificación de actualización
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "✏️ Se subió un comprobante a la plantilla recurrente.",
+      correo: req.user.email,
+    });
+
+    res.json({ message: "Comprobante subido correctamente", fact_recurrente });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al subir la factura recurrente' });
+    res.status(500).json({ error: "Error al subir la factura recurrente" });
   }
 };
 
@@ -401,5 +757,20 @@ exports.obtenerAprobadasParaPagador = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener las recurrentes aprobadas" });
+  }
+};
+
+// ────────────── Obtener una plantilla recurrente por ID ──────────────
+exports.getRecurrentePorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: 'No se encontró la plantilla recurrente' });
+    }
+    res.json(recurrente);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener la plantilla recurrente' });
   }
 };

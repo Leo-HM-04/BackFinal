@@ -90,6 +90,32 @@ exports.createSolicitud = async (req, res) => {
       fecha_limite_pago,
     });
 
+    // Detalles para el correo
+    const detallesSolicitud = `
+      <b>Departamento:</b> ${departamento}<br>
+      <b>Monto:</b> $${monto}<br>
+      <b>Cuenta destino:</b> ${cuenta_destino}<br>
+      <b>Concepto:</b> ${concepto}<br>
+      <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+      <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
+      ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+    `;
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Nueva solicitud creada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha creado una nueva solicitud por el usuario ID ${id_usuario}:<br>${detallesSolicitud}`
+      });
+    }
+
     /** 🔔 Notificar a TODOS los aprobadores */
     const [aprobadores] = await pool.query(
       "SELECT id_usuario, email FROM usuarios WHERE rol = 'aprobador'"
@@ -101,12 +127,21 @@ exports.createSolicitud = async (req, res) => {
         correo: ap.email,
       });
     }
-    // Notificar al solicitante
+    // Notificar al solicitante (correo con detalles)
+    const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    await enviarCorreo({
+      para: solicitante[0]?.email,
+      asunto: 'Solicitud registrada exitosamente',
+      nombre: solicitante[0]?.nombre,
+      link: url,
+      mensaje: `¡Tu solicitud fue registrada exitosamente!<br>${detallesSolicitud}`
+    });
     await NotificacionService.crearNotificacion({
       id_usuario,
       mensaje: "¡Tu solicitud fue registrada exitosamente!",
+      correo: solicitante[0]?.email
     });
-    // Registrar acción y notificar admin (solo registro, sin correo)
+    // Registrar acción
     await registrarAccion({
       req,
       accion: 'creó',
@@ -149,22 +184,68 @@ exports.actualizarEstado = async (req, res) => {
 
     /** Datos del solicitante (y su email) */
     const [sol] = await pool.query(
-      `SELECT s.id_usuario, u.email
+      `SELECT s.id_usuario, u.email, u.nombre, s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
        FROM solicitudes_pago s
        JOIN usuarios u ON u.id_usuario = s.id_usuario
        WHERE s.id_solicitud = ?`,
       [id]
     );
-    const { id_usuario: idSolicitante, email } = sol[0];
+    const { id_usuario: idSolicitante, email, nombre, departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, factura_url } = sol[0];
+
+    // Obtener info de admin y aprobador
+    const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]);
+    const url = 'https://bechapra.com';
+    const detallesSolicitud = `
+      <b>ID:</b> ${id}<br>
+      <b>Departamento:</b> ${departamento}<br>
+      <b>Monto:</b> $${monto}<br>
+      <b>Cuenta destino:</b> ${cuenta_destino}<br>
+      <b>Concepto:</b> ${concepto}<br>
+      <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+      <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
+      ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+      ${comentario_aprobador ? `<b>Comentario del aprobador:</b> ${comentario_aprobador}<br>` : ''}
+    `;
+    const { enviarCorreo } = require('../services/correoService');
 
     if (estado === "autorizada") {
-      // 1) Solicitante
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Solicitud aprobada',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `El aprobador ID ${id_aprobador} ha <b>aprobado</b> una solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al aprobador
+      if (aprobadorRows.length > 0) {
+        const aprobador = aprobadorRows[0];
+        await enviarCorreo({
+          para: aprobador.email,
+          asunto: 'Confirmación de aprobación de solicitud',
+          nombre: aprobador.nombre,
+          link: url,
+          mensaje: `Has <b>aprobado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al solicitante
+      await enviarCorreo({
+        para: email,
+        asunto: 'Tu solicitud fue aprobada',
+        nombre: nombre,
+        link: url,
+        mensaje: `¡Tu solicitud fue <b>aprobada</b>!<br>${detallesSolicitud}`
+      });
+      // 1) Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
         mensaje: "✅ Tu solicitud fue autorizada.",
         correo: email,
       });
-
       // 2) Pagadores
       const [pagadores] = await pool.query(
         "SELECT id_usuario, email FROM usuarios WHERE rol = 'pagador_banca'"
@@ -176,24 +257,59 @@ exports.actualizarEstado = async (req, res) => {
           correo: pg.email,
         });
       }
-
-      // 3) Aprobador (su propia acción)
-      await NotificacionService.crearNotificacion({
-        id_usuario: id_aprobador,
-        mensaje: `✅ Autorizaste la solicitud (ID: ${id}) correctamente.`,
-      });
+      // 3) Aprobador (notificación in-app)
+      if (aprobadorRows.length > 0) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: `✅ Autorizaste la solicitud (ID: ${id}) correctamente.`,
+          correo: aprobadorRows[0].email
+        });
+      }
     } else {
-      // Rechazada → solo solicitante
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Solicitud rechazada',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `El aprobador ID ${id_aprobador} ha <b>rechazado</b> una solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al aprobador
+      if (aprobadorRows.length > 0) {
+        const aprobador = aprobadorRows[0];
+        await enviarCorreo({
+          para: aprobador.email,
+          asunto: 'Confirmación de rechazo de solicitud',
+          nombre: aprobador.nombre,
+          link: url,
+          mensaje: `Has <b>rechazado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al solicitante
+      await enviarCorreo({
+        para: email,
+        asunto: 'Tu solicitud fue rechazada',
+        nombre: nombre,
+        link: url,
+        mensaje: `Tu solicitud fue <b>rechazada</b>.<br>${detallesSolicitud}`
+      });
+      // Rechazada → solo solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
         mensaje: "❌ Tu solicitud fue rechazada.",
         correo: email,
       });
-      // Aprobador (su propia acción)
-      await NotificacionService.crearNotificacion({
-        id_usuario: id_aprobador,
-        mensaje: `❌ Rechazaste la solicitud (ID: ${id}).`,
-      });
+      // Aprobador (notificación in-app)
+      if (aprobadorRows.length > 0) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: `❌ Rechazaste la solicitud (ID: ${id}).`,
+          correo: aprobadorRows[0].email
+        });
+      }
     }
 
     // Registrar acción y notificar admin (solo registro, sin correo)
@@ -235,12 +351,15 @@ exports.marcarComoPagada = async (req, res) => {
       return res.status(404).json({ error: `No se pudo marcar como pagada. Estado actual: ${estadoActual}` });
     }
 
-    /** Solicitante + aprobador (si existe) con sus emails */
+    /** Solicitante + aprobador (si existe) con sus emails y detalles */
     const [rows] = await pool.query(
-      `SELECT s.id_usuario                       AS idSolicitante,
-              us.email                          AS emailSolic,
+      `SELECT s.id_usuario AS idSolicitante,
+              us.email AS emailSolic,
+              us.nombre AS nombreSolic,
               s.id_aprobador,
-              ua.email                          AS emailAprob
+              ua.email AS emailAprob,
+              ua.nombre AS nombreAprob,
+              s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
        FROM solicitudes_pago s
        JOIN usuarios us ON us.id_usuario = s.id_usuario
        LEFT JOIN usuarios ua ON ua.id_usuario = s.id_aprobador
@@ -249,17 +368,64 @@ exports.marcarComoPagada = async (req, res) => {
     );
 
     if (rows.length) {
-      const { idSolicitante, emailSolic, id_aprobador, emailAprob } = rows[0];
+      const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, factura_url } = rows[0];
 
-      // Solicitante
+      // Obtener info de admin
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const detallesSolicitud = `
+        <b>ID:</b> ${id}<br>
+        <b>Departamento:</b> ${departamento}<br>
+        <b>Monto:</b> $${monto}<br>
+        <b>Cuenta destino:</b> ${cuenta_destino}<br>
+        <b>Concepto:</b> ${concepto}<br>
+        <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+        <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
+        ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+      `;
+      const { enviarCorreo } = require('../services/correoService');
+
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Solicitud pagada',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `El pagador ID ${id_pagador} ha <b>marcado como pagada</b> la siguiente solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al aprobador (si existe)
+      if (id_aprobador && emailAprob) {
+        await enviarCorreo({
+          para: emailAprob,
+          asunto: 'Solicitud pagada',
+          nombre: nombreAprob,
+          link: url,
+          mensaje: `La solicitud que aprobaste ha sido <b>pagada</b>:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al solicitante
+      if (emailSolic) {
+        await enviarCorreo({
+          para: emailSolic,
+          asunto: 'Tu solicitud ha sido pagada',
+          nombre: nombreSolic,
+          link: url,
+          mensaje: `¡Tu solicitud ha sido <b>pagada</b>!<br>${detallesSolicitud}`
+        });
+      }
+
+      // Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
         mensaje: "💸 Tu solicitud ha sido pagada.",
         correo: emailSolic,
       });
 
-      // Aprobador (si existe)
-      if (id_aprobador) {
+      // Aprobador (si existe, notificación in-app)
+      if (id_aprobador && emailAprob) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
           mensaje: "💸 Se pagó la solicitud que aprobaste.",
@@ -268,9 +434,11 @@ exports.marcarComoPagada = async (req, res) => {
       }
 
       // Pagador (su propio historial)
+      const [pagador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
       await NotificacionService.crearNotificacion({
         id_usuario: id_pagador,
         mensaje: `✅ Marcaste como pagada la solicitud (ID: ${id}).`,
+        correo: pagador[0]?.email
       });
     }
 
@@ -285,8 +453,59 @@ exports.marcarComoPagada = async (req, res) => {
 exports.deleteSolicitud = async (req, res) => {
   try {
     const { id } = req.params;
+    // Obtener detalles antes de eliminar
+    const [sol] = await pool.query(
+      `SELECT s.id_usuario, u.email, u.nombre, s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+       FROM solicitudes_pago s JOIN usuarios u ON u.id_usuario = s.id_usuario WHERE s.id_solicitud = ?`,
+      [id]
+    );
+    let detallesSolicitud = '';
+    if (sol.length) {
+      const s = sol[0];
+      detallesSolicitud = `
+        <b>Departamento:</b> ${s.departamento}<br>
+        <b>Monto:</b> $${s.monto}<br>
+        <b>Cuenta destino:</b> ${s.cuenta_destino}<br>
+        <b>Concepto:</b> ${s.concepto}<br>
+        <b>Tipo de pago:</b> ${s.tipo_pago || '-'}<br>
+        <b>Fecha límite de pago:</b> ${s.fecha_limite_pago || '-'}<br>
+        ${s.factura_url ? `<b>Factura adjunta:</b> ${s.factura_url}<br>` : ''}
+      `;
+    }
+
     await SolicitudModel.eliminar(id);
-    // Registrar acción y notificar admin (solo registro, sin correo)
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0 && sol.length) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Solicitud eliminada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha eliminado una solicitud del usuario ${sol[0].nombre} (ID: ${sol[0].id_usuario}):<br>${detallesSolicitud}`
+      });
+    }
+
+    // Enviar correo al solicitante
+    if (sol.length) {
+      await enviarCorreo({
+        para: sol[0].email,
+        asunto: 'Tu solicitud ha sido eliminada',
+        nombre: sol[0].nombre,
+        link: url,
+        mensaje: `Tu solicitud ha sido eliminada por el administrador.<br>${detallesSolicitud}`
+      });
+      await NotificacionService.crearNotificacion({
+        id_usuario: sol[0].id_usuario,
+        mensaje: 'Tu solicitud ha sido eliminada por el administrador.',
+        correo: sol[0].email
+      });
+    }
+
     await registrarAccion({
       req,
       accion: 'eliminó',
@@ -309,14 +528,61 @@ exports.deleteSolicitudSolicitante = async (req, res) => {
     if (rol !== 'solicitante') {
       return res.status(403).json({ error: 'No tienes permiso para eliminar esta solicitud' });
     }
+    // Obtener detalles antes de eliminar
+    const [sol] = await pool.query(
+      `SELECT s.id_usuario, u.email, u.nombre, s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+       FROM solicitudes_pago s JOIN usuarios u ON u.id_usuario = s.id_usuario WHERE s.id_solicitud = ?`,
+      [id]
+    );
+    let detallesSolicitud = '';
+    if (sol.length) {
+      const s = sol[0];
+      detallesSolicitud = `
+        <b>Departamento:</b> ${s.departamento}<br>
+        <b>Monto:</b> $${s.monto}<br>
+        <b>Cuenta destino:</b> ${s.cuenta_destino}<br>
+        <b>Concepto:</b> ${s.concepto}<br>
+        <b>Tipo de pago:</b> ${s.tipo_pago || '-'}<br>
+        <b>Fecha límite de pago:</b> ${s.fecha_limite_pago || '-'}<br>
+        ${s.factura_url ? `<b>Factura adjunta:</b> ${s.factura_url}<br>` : ''}
+      `;
+    }
+
     const ok = await SolicitudModel.eliminarSiSolicitantePendiente(id, id_usuario);
     if (!ok) {
       return res.status(400).json({ error: 'Solo puedes eliminar solicitudes propias y en estado pendiente.' });
     }
-    await NotificacionService.crearNotificacion({
-      id_usuario,
-      mensaje: "Has eliminado una solicitud correctamente.",
-    });
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0 && sol.length) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Solicitud eliminada por solicitante en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `El usuario ${sol[0].nombre} (ID: ${sol[0].id_usuario}) ha eliminado su propia solicitud:<br>${detallesSolicitud}`
+      });
+    }
+
+    // Enviar correo al solicitante
+    if (sol.length) {
+      await enviarCorreo({
+        para: sol[0].email,
+        asunto: 'Has eliminado una solicitud',
+        nombre: sol[0].nombre,
+        link: url,
+        mensaje: `Has eliminado una solicitud correctamente.<br>${detallesSolicitud}`
+      });
+      await NotificacionService.crearNotificacion({
+        id_usuario,
+        mensaje: "Has eliminado una solicitud correctamente.",
+        correo: sol[0].email
+      });
+    }
     res.json({ message: 'Solicitud eliminada correctamente' });
   } catch (err) {
     console.error(err);
@@ -366,9 +632,45 @@ exports.editarSolicitud = async (req, res) => {
       });
     }
 
+    // Detalles para el correo
+    const detallesSolicitud = `
+      <b>Departamento:</b> ${departamento}<br>
+      <b>Monto:</b> $${monto}<br>
+      <b>Cuenta destino:</b> ${cuenta_destino}<br>
+      <b>Concepto:</b> ${concepto}<br>
+      <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+      <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
+      ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+    `;
+
+    // Enviar correo al admin_general
+    const { enviarCorreo } = require('../services/correoService');
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    const url = 'https://bechapra.com';
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Solicitud actualizada en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha actualizado una solicitud por el usuario ID ${id_usuario}:<br>${detallesSolicitud}`
+      });
+    }
+
+    // Enviar correo al solicitante
+    const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    await enviarCorreo({
+      para: solicitante[0]?.email,
+      asunto: 'Solicitud actualizada exitosamente',
+      nombre: solicitante[0]?.nombre,
+      link: url,
+      mensaje: `¡Has actualizado tu solicitud correctamente!<br>${detallesSolicitud}`
+    });
     await NotificacionService.crearNotificacion({
       id_usuario,
       mensaje: "✏️ Has editado tu solicitud correctamente.",
+      correo: solicitante[0]?.email
     });
     res.json({ message: "Solicitud actualizada correctamente" });
   } catch (err) {
@@ -391,6 +693,75 @@ exports.subirComprobante = async (req, res) => {
       "UPDATE solicitudes_pago SET soporte_url = ? WHERE id_solicitud = ?",
       [soporte_url, id]
     );
+
+    // Obtener detalles y correos
+    const [rows] = await pool.query(
+      `SELECT s.id_usuario AS idSolicitante,
+              us.email AS emailSolic,
+              us.nombre AS nombreSolic,
+              s.id_aprobador,
+              ua.email AS emailAprob,
+              ua.nombre AS nombreAprob,
+              s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+       FROM solicitudes_pago s
+       JOIN usuarios us ON us.id_usuario = s.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = s.id_aprobador
+       WHERE s.id_solicitud = ?`,
+      [id]
+    );
+
+    if (rows.length) {
+      const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, factura_url } = rows[0];
+
+      // Obtener info de admin
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const detallesSolicitud = `
+        <b>ID:</b> ${id}<br>
+        <b>Departamento:</b> ${departamento}<br>
+        <b>Monto:</b> $${monto}<br>
+        <b>Cuenta destino:</b> ${cuenta_destino}<br>
+        <b>Concepto:</b> ${concepto}<br>
+        <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+        <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
+        ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+        <b>Comprobante subido:</b> ${soporte_url}<br>
+      `;
+      const { enviarCorreo } = require('../services/correoService');
+
+      // Correo al admin
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Comprobante subido a solicitud',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la siguiente solicitud:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al aprobador (si existe)
+      if (id_aprobador && emailAprob) {
+        await enviarCorreo({
+          para: emailAprob,
+          asunto: 'Comprobante subido a solicitud',
+          nombre: nombreAprob,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la solicitud que aprobaste:<br>${detallesSolicitud}`
+        });
+      }
+      // Correo al solicitante
+      if (emailSolic) {
+        await enviarCorreo({
+          para: emailSolic,
+          asunto: 'Comprobante subido a tu solicitud',
+          nombre: nombreSolic,
+          link: url,
+          mensaje: `Se ha subido un comprobante a tu solicitud:<br>${detallesSolicitud}`
+        });
+      }
+    }
+
     res.json({ message: "Comprobante subido correctamente", soporte_url });
   } catch (err) {
     console.error(err);
@@ -425,5 +796,101 @@ exports.getAutorizadasYPagadas = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener solicitudes autorizadas y pagadas' });
+  }
+};
+
+// ──────────────── ENDPOINTS DE ESTADÍSTICAS PARA DASHBOARD ADMIN ────────────────
+
+// 1. Solicitudes por estado
+exports.getSolicitudesPorEstado = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT estado, COUNT(*) as cantidad FROM solicitudes_pago GROUP BY estado`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas por estado' });
+  }
+};
+
+// 2. Monto total pagado por mes/año
+exports.getMontoPagadoPorMes = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT YEAR(fecha_pago) as anio, MONTH(fecha_pago) as mes, SUM(monto) as total_pagado
+       FROM solicitudes_pago
+       WHERE estado = 'pagada' AND fecha_pago IS NOT NULL
+       GROUP BY anio, mes
+       ORDER BY anio DESC, mes DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener monto pagado por mes/año' });
+  }
+};
+
+// 3. Solicitudes por departamento
+exports.getSolicitudesPorDepartamento = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT departamento, COUNT(*) as cantidad FROM solicitudes_pago GROUP BY departamento`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas por departamento' });
+  }
+};
+
+// 4. Solicitudes por tipo de pago
+exports.getSolicitudesPorTipoPago = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT tipo_pago, COUNT(*) as cantidad FROM solicitudes_pago GROUP BY tipo_pago`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas por tipo de pago' });
+  }
+};
+
+// 5. Solicitudes creadas, aprobadas y pagadas en el tiempo
+exports.getSolicitudesPorFecha = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT DATE(fecha_creacion) as fecha, 
+              SUM(estado = 'pendiente') as pendientes,
+              SUM(estado = 'autorizada') as autorizadas,
+              SUM(estado = 'pagada') as pagadas,
+              SUM(estado = 'rechazada') as rechazadas
+       FROM solicitudes_pago
+       GROUP BY fecha
+       ORDER BY fecha DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas por fecha' });
+  }
+};
+
+// 6. Ranking de usuarios con más solicitudes
+exports.getRankingUsuariosSolicitudes = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT u.id_usuario, u.nombre, COUNT(s.id_solicitud) as total_solicitudes
+       FROM usuarios u
+       JOIN solicitudes_pago s ON s.id_usuario = u.id_usuario
+       GROUP BY u.id_usuario, u.nombre
+       ORDER BY total_solicitudes DESC
+       LIMIT 10`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener ranking de usuarios' });
   }
 };

@@ -61,17 +61,48 @@ const createUsuario = async (req, res) => {
     // Crear usuario (sin token de verificación, marcado como verificado)
     const id = await Usuario.createUsuario(nombre, email, hashedPassword, rol, null, true);
 
-    // Enviar correo de bienvenida profesional
+    // Enviar correo de bienvenida profesional al usuario creado
     const { enviarCorreo } = require('../services/correoService');
     const url = 'https://bechapra.com'; // Cambia por la URL real de la plataforma si es necesario
     await enviarCorreo({
       para: email,
       asunto: '¡Bienvenido/a a la plataforma Bechapra!',
       nombre,
-      link: url
+      link: url,
+      mensaje: `¡Hola ${nombre}!<br>Tu cuenta ha sido creada exitosamente.<br>Accede a la plataforma y comienza a gestionar tus solicitudes.`
     });
 
-    // Registrar acción y notificar admin
+    // Notificación persistente de bienvenida al usuario creado
+    const NotificacionService = require('../services/notificacionesService');
+    await NotificacionService.crearNotificacion({
+      id_usuario: id,
+      mensaje: `🎉 ¡Bienvenido/a ${nombre}! Tu cuenta ha sido creada exitosamente.`,
+      enviarCorreo: false
+    });
+
+    // Buscar admin_general para notificarle
+    const pool = require('../db/connection');
+    const [admins] = await pool.query("SELECT id_usuario, email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    if (admins.length > 0) {
+      const admin = admins[0];
+      // Notificación persistente al admin
+      await NotificacionService.crearNotificacion({
+        id_usuario: admin.id_usuario,
+        mensaje: `👤 Se ha creado un nuevo usuario:<br><b>Nombre:</b> ${nombre}<br><b>Email:</b> ${email}<br><b>Rol:</b> ${rol}`,
+        enviarCorreo: true,
+        correo: admin.email
+      });
+      // Correo profesional al admin con detalles
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Nuevo usuario creado en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha creado un nuevo usuario en la plataforma:<br><b>Nombre:</b> ${nombre}<br><b>Email:</b> ${email}<br><b>Rol:</b> ${rol}`
+      });
+    }
+
+    // Registrar acción
     await registrarAccion({
       req,
       accion: 'creó',
@@ -145,6 +176,22 @@ const updateUsuario = async (req, res) => {
       mensajeExtra: cambios.length > 0 ? cambios.join(', ') : ''
     });
 
+    // Buscar admin_general para notificarle por correo
+    const pool = require('../db/connection');
+    const { enviarCorreo } = require('../services/correoService');
+    const url = 'https://bechapra.com';
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Usuario editado en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha editado un usuario:<br><b>ID:</b> ${id}<br>${cambios.length > 0 ? cambios.join('<br>') : ''}`
+      });
+    }
+
     res.json({ message: "Usuario actualizado correctamente" });
   } catch (error) {
     console.error("Error en updateUsuario:", error);
@@ -162,7 +209,7 @@ const deleteUsuario = async (req, res) => {
     const usuarioEliminado = await Usuario.getUsuarioById(req.params.id);
     if (!usuarioEliminado) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    // Registrar acción y notificar admin (solo registro, sin correo)
+    // Registrar acción
     await registrarAccion({
       req,
       accion: 'eliminó',
@@ -170,6 +217,22 @@ const deleteUsuario = async (req, res) => {
       entidadId: req.params.id,
       mensajeExtra: `Nombre: ${usuarioEliminado.nombre}, Email: ${usuarioEliminado.email}, Rol: ${usuarioEliminado.rol}`
     });
+
+    // Buscar admin_general para notificarle por correo
+    const pool = require('../db/connection');
+    const { enviarCorreo } = require('../services/correoService');
+    const url = 'https://bechapra.com';
+    const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+    if (admins.length > 0) {
+      const admin = admins[0];
+      await enviarCorreo({
+        para: admin.email,
+        asunto: 'Usuario eliminado en Bechapra',
+        nombre: admin.nombre,
+        link: url,
+        mensaje: `Se ha eliminado un usuario:<br><b>Nombre:</b> ${usuarioEliminado.nombre}<br><b>Email:</b> ${usuarioEliminado.email}<br><b>Rol:</b> ${usuarioEliminado.rol}`
+      });
+    }
 
     const deleted = await Usuario.deleteUsuario(req.params.id);
     res.json({ message: "Usuario eliminado" });

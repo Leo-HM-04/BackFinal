@@ -88,3 +88,45 @@ router.get(
 );
 
 module.exports = router;
+// ──────────────── RUTAS DE ESTADÍSTICAS PARA DASHBOARD ADMIN ────────────────
+router.get(
+  "/estadisticas/por-estado",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getSolicitudesPorEstado
+);
+
+router.get(
+  "/estadisticas/monto-pagado",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getMontoPagadoPorMes
+);
+
+router.get(
+  "/estadisticas/por-departamento",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getSolicitudesPorDepartamento
+);
+
+router.get(
+  "/estadisticas/por-tipo-pago",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getSolicitudesPorTipoPago
+);
+
+router.get(
+  "/estadisticas/por-fecha",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getSolicitudesPorFecha
+);
+
+router.get(
+  "/estadisticas/ranking-usuarios",
+  authMiddleware,
+  autorizarRol("admin_general"),
+  controller.getRankingUsuariosSolicitudes
+);

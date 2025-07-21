@@ -25,20 +25,34 @@ exports.crearNotificacion = async ({
     }
 
     // 3. Enviar por correo si se solicita
-    if (enviarCorreo && correo) {
-      // Log para depuración
-      console.log('[Notificaciones] Enviando correo a admin:', { para: correo, asunto: 'Nueva notificación', mensaje });
-      // Enviar correo simple (texto plano)
-      try {
-        await correoService.enviarCorreo({
-          para: correo,
-          asunto: "Nueva notificación",
-          nombre: 'Administrador',
-          link: '',
-          mensaje // se ignora, pero lo dejamos para compatibilidad
-        });
-      } catch (err) {
-        console.error('[Notificaciones] Error enviando correo a admin:', err);
+    if (enviarCorreo) {
+      let destinatario = correo;
+      // Si no se proporcionó el correo, buscarlo en la base de datos
+      if (!destinatario) {
+        try {
+          const [rows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+          if (rows.length > 0) {
+            destinatario = rows[0].email;
+            nombre = rows[0].nombre;
+          }
+        } catch (err) {
+          console.error('[Notificaciones] Error obteniendo email del usuario:', err);
+        }
+      }
+      if (destinatario) {
+        // Log para depuración
+        console.log('[Notificaciones] Enviando correo:', { para: destinatario, asunto: 'Nueva notificación', mensaje });
+        try {
+          await correoService.enviarCorreo({
+            para: destinatario,
+            asunto: "Nueva notificación",
+            nombre: typeof nombre !== 'undefined' ? nombre : 'Usuario',
+            link: '',
+            mensaje // se ignora, pero lo dejamos para compatibilidad
+          });
+        } catch (err) {
+          console.error('[Notificaciones] Error enviando correo:', err);
+        }
       }
     }
   } catch (error) {
