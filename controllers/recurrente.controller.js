@@ -57,6 +57,10 @@ exports.crearRecurrente = async (req, res) => {
       });
     }
 
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "¡Tu plantilla recurrente fue registrada exitosamente!",
+    });
     res.status(201).json({ message: "Plantilla recurrente creada correctamente" });
   } catch (err) {
     console.error(err);

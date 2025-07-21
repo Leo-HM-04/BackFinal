@@ -94,7 +94,6 @@ exports.createSolicitud = async (req, res) => {
     const [aprobadores] = await pool.query(
       "SELECT id_usuario, email FROM usuarios WHERE rol = 'aprobador'"
     );
-
     for (const ap of aprobadores) {
       await NotificacionService.crearNotificacion({
         id_usuario: ap.id_usuario,
@@ -102,7 +101,11 @@ exports.createSolicitud = async (req, res) => {
         correo: ap.email,
       });
     }
-
+    // Notificar al solicitante
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "¡Tu solicitud fue registrada exitosamente!",
+    });
     // Registrar acción y notificar admin (solo registro, sin correo)
     await registrarAccion({
       req,
@@ -111,7 +114,6 @@ exports.createSolicitud = async (req, res) => {
       entidadId: null,
       mensajeExtra: ''
     });
-
     res.status(201).json({ message: "Solicitud creada exitosamente" });
   } catch (err) {
     console.error(err);
@@ -128,6 +130,11 @@ exports.actualizarEstado = async (req, res) => {
 
     if (!["autorizada", "rechazada"].includes(estado)) {
       return res.status(400).json({ error: "Estado no válido." });
+    }
+
+    // Validar que siempre se asigne un aprobador si se va a autorizar
+    if (estado === 'autorizada' && !id_aprobador) {
+      return res.status(400).json({ error: 'No se puede autorizar una solicitud sin aprobador asignado.' });
     }
 
     const filas = await SolicitudModel.actualizarEstado(
@@ -169,12 +176,23 @@ exports.actualizarEstado = async (req, res) => {
           correo: pg.email,
         });
       }
+
+      // 3) Aprobador (su propia acción)
+      await NotificacionService.crearNotificacion({
+        id_usuario: id_aprobador,
+        mensaje: `✅ Autorizaste la solicitud (ID: ${id}) correctamente.`,
+      });
     } else {
       // Rechazada → solo solicitante
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
         mensaje: "❌ Tu solicitud fue rechazada.",
         correo: email,
+      });
+      // Aprobador (su propia acción)
+      await NotificacionService.crearNotificacion({
+        id_usuario: id_aprobador,
+        mensaje: `❌ Rechazaste la solicitud (ID: ${id}).`,
       });
     }
 
@@ -248,6 +266,12 @@ exports.marcarComoPagada = async (req, res) => {
           correo: emailAprob,
         });
       }
+
+      // Pagador (su propio historial)
+      await NotificacionService.crearNotificacion({
+        id_usuario: id_pagador,
+        mensaje: `✅ Marcaste como pagada la solicitud (ID: ${id}).`,
+      });
     }
 
     res.json({ message: "Solicitud marcada como pagada correctamente" });
@@ -289,6 +313,10 @@ exports.deleteSolicitudSolicitante = async (req, res) => {
     if (!ok) {
       return res.status(400).json({ error: 'Solo puedes eliminar solicitudes propias y en estado pendiente.' });
     }
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "Has eliminado una solicitud correctamente.",
+    });
     res.json({ message: 'Solicitud eliminada correctamente' });
   } catch (err) {
     console.error(err);
@@ -338,6 +366,10 @@ exports.editarSolicitud = async (req, res) => {
       });
     }
 
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "✏️ Has editado tu solicitud correctamente.",
+    });
     res.json({ message: "Solicitud actualizada correctamente" });
   } catch (err) {
     console.error(err);

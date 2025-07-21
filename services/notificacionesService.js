@@ -11,6 +11,8 @@ exports.crearNotificacion = async ({
   correo = null
 }) => {
   try {
+    // Log de depuración para ver qué se intenta guardar
+    console.log('[Notificaciones] Insertando:', { id_usuario, mensaje });
     // 1. Guardar en la base de datos (leida en false, fecha_creacion automática)
     await pool.query(
       "INSERT INTO notificaciones (id_usuario, mensaje, leida) VALUES (?, ?, 0)",
@@ -50,7 +52,14 @@ exports.obtenerNotificaciones = async (id_usuario) => {
     "SELECT id_notificacion, id_usuario, mensaje, leida, fecha_creacion FROM notificaciones WHERE id_usuario = ? ORDER BY fecha_creacion DESC",
     [id_usuario]
   );
-  return rows;
+  // Normalizar los campos para el frontend
+  return rows.map(row => ({
+    id: row.id_notificacion,
+    mensaje: row.mensaje,
+    leida: !!row.leida,
+    fecha: row.fecha_creacion,
+    // Se pueden agregar más campos si el frontend los requiere
+  }));
 };
 
 // Marcar una notificación como leída

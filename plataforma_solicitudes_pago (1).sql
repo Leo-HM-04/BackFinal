@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 18-07-2025 a las 09:34:58
+-- Tiempo de generación: 21-07-2025 a las 10:19:25
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -42,15 +42,7 @@ CREATE TABLE `comprobantes_pago` (
 --
 
 INSERT INTO `comprobantes_pago` (`id_comprobante`, `id_solicitud`, `nombre_archivo`, `ruta_archivo`, `fecha_subida`, `usuario_subio`, `comentario`) VALUES
-(1, 14, 'Captura de pantalla 2025-07-14 135016.png', 'uploads\\facturas\\1752528568478-982446442.png', '2025-07-14 15:29:28', 24, NULL),
-(2, 11, 'Captura de pantalla 2025-07-14 135016.png', 'uploads\\facturas\\1752528605251-279067567.png', '2025-07-14 15:30:05', 24, NULL),
-(3, 11, 'Captura de pantalla 2025-07-14 134309.png', 'uploads\\comprobantes\\1752528787220-134358371.png', '2025-07-14 15:33:07', 24, NULL),
-(4, 12, 'Captura de pantalla 2025-07-14 154244.png', 'uploads\\comprobantes\\1752529407173-514779375.png', '2025-07-14 15:43:27', 24, NULL),
-(5, 18, 'A_Sample_PDF__1_.pdf', 'uploads\\comprobantes\\1752529750537-751460955.pdf', '2025-07-14 15:49:10', 24, NULL),
-(6, 24, 'Captura de pantalla 2025-07-14 161339.png', 'uploads\\comprobantes\\1752602583003-707041481.png', '2025-07-15 12:03:03', 24, NULL),
-(7, 25, 'Captura de pantalla 2025-07-15 094052.png', 'uploads\\otros\\1752603966833-480692409.png', '2025-07-15 12:26:06', 24, NULL),
-(8, 15, 'Captura de pantalla 2025-07-15 122701.png', 'uploads\\otros\\1752604040754-437645967.png', '2025-07-15 12:27:20', 24, NULL),
-(9, 27, 'ARCHIVO-PDF-DE-PRUEBA.pdf', 'uploads\\otros\\1752618513497-928908035.pdf', '2025-07-15 16:28:33', 24, NULL);
+(1, 1, 'Captura de pantalla 2025-07-21 013740.png', 'uploads\\comprobantes\\1753084913238-678280371.png', '2025-07-21 02:01:53', 11, NULL);
 
 -- --------------------------------------------------------
 
@@ -64,6 +56,54 @@ CREATE TABLE `ejecuciones_recurrentes` (
   `id_solicitud` int(11) NOT NULL,
   `fecha_ejecucion` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `login_audit`
+--
+
+CREATE TABLE `login_audit` (
+  `id` int(11) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  `fecha` datetime DEFAULT current_timestamp(),
+  `exito` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `login_audit`
+--
+
+INSERT INTO `login_audit` (`id`, `email`, `ip`, `fecha`, `exito`) VALUES
+(1, 'admin@bechapra.com', '::1', '2025-07-20 02:09:52', 0),
+(2, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 02:15:21', 1),
+(3, 'kikeramirez160418@gmail.com', '::1', '2025-07-20 02:52:00', 0),
+(4, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 02:52:11', 1),
+(5, 'admin@bechapra.com', '::1', '2025-07-20 15:31:12', 0),
+(6, 'admin@bechapra.com', '::1', '2025-07-20 15:31:50', 0),
+(7, 'admin@bechapra.com', '::1', '2025-07-20 17:39:26', 0),
+(8, 'admin@bechapra.com', '::1', '2025-07-20 17:39:44', 0),
+(9, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 17:40:51', 1),
+(10, 'test@bechapra.com', '::1', '2025-07-20 18:28:53', 1),
+(11, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 18:29:09', 1),
+(12, 'test@bechapra.com', '::1', '2025-07-20 18:29:47', 1),
+(13, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 18:30:08', 1),
+(14, 'test@bechapra.com', '::1', '2025-07-20 18:31:13', 1),
+(15, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 18:32:47', 1),
+(16, 'test@bechapra.com', '::1', '2025-07-20 19:07:11', 1),
+(17, 'test@bechapra.com', '::1', '2025-07-20 22:27:51', 1),
+(18, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 22:47:53', 1),
+(19, 'enrique.bechapra@gmail.com', '::1', '2025-07-20 22:48:00', 1),
+(20, 'test@bechapra.com', '::1', '2025-07-20 22:49:59', 1),
+(21, 'test@bechapra.com', '::1', '2025-07-20 23:45:44', 1),
+(22, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:01:07', 1),
+(23, 'test@bechapra.com', '::1', '2025-07-21 00:02:41', 1),
+(24, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:21:03', 1),
+(25, 'test2@bechapra.com', '::1', '2025-07-21 00:22:54', 1),
+(26, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:51:02', 1),
+(27, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:52:58', 1),
+(28, 'test3@bechapra.com', '::1', '2025-07-21 00:54:34', 1);
 
 -- --------------------------------------------------------
 
@@ -84,181 +124,60 @@ CREATE TABLE `notificaciones` (
 --
 
 INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leida`, `fecha_creacion`) VALUES
-(3, 6, '? Nueva solicitud autorizada para pago.', 0, '2025-07-02 13:55:09'),
-(5, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:09:01'),
-(6, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:11:08'),
-(7, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:17:06'),
-(8, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:45:00'),
-(9, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:46:38'),
-(10, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 12:58:20'),
-(11, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:36:44'),
-(12, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:45:13'),
-(13, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:52:14'),
-(14, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 13:54:44'),
-(15, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-10 15:10:01'),
-(16, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-11 10:23:09'),
-(17, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-11 10:23:11'),
-(18, 25, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-11 10:23:12'),
-(19, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-11 10:23:17'),
-(20, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-11 10:23:18'),
-(21, 25, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-11 10:23:19'),
-(22, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-11 10:24:09'),
-(23, 23, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-11 10:24:10'),
-(24, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-11 11:05:20'),
-(25, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-11 11:05:21'),
-(26, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-11 11:08:37'),
-(27, 25, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-11 11:08:37'),
-(28, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-11 11:17:09'),
-(29, 23, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-11 11:17:09'),
-(30, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-11 11:26:49'),
-(31, 5, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-11 11:26:49'),
-(32, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:52:45'),
-(33, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:52:46'),
-(34, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:52:46'),
-(35, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:57:09'),
-(36, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:57:09'),
-(37, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:57:09'),
-(38, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:58:13'),
-(39, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:58:14'),
-(40, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-14 16:58:14'),
-(41, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:00:15'),
-(42, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:00:16'),
-(43, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:00:16'),
-(44, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-15 12:01:51'),
-(45, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:01:52'),
-(46, 22, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:01:52'),
-(47, 24, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:01:53'),
-(48, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-15 12:02:14'),
-(49, 25, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-15 12:02:15'),
-(50, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:07:47'),
-(51, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:07:47'),
-(52, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:07:47'),
-(53, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:09:58'),
-(54, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:09:58'),
-(55, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:09:59'),
-(56, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-15 12:22:18'),
-(57, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:22:20'),
-(58, 22, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:22:20'),
-(59, 24, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 12:22:21'),
-(60, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-15 12:22:49'),
-(61, 25, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-15 12:22:50'),
-(62, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-15 12:27:07'),
-(63, 5, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:28:53'),
-(64, 23, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:28:54'),
-(65, 25, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-15 12:28:54'),
-(66, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-15 16:23:43'),
-(67, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:23:44'),
-(68, 22, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:23:44'),
-(69, 24, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:23:45'),
-(70, 20, '✅ Tu solicitud fue autorizada.', 0, '2025-07-15 16:26:25'),
-(71, 6, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:26:25'),
-(72, 22, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:26:25'),
-(73, 24, '📝 Nueva solicitud autorizada para pago.', 0, '2025-07-15 16:26:26'),
-(74, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-15 16:27:09'),
-(75, 25, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-15 16:27:09'),
-(76, 20, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-15 16:30:30'),
-(77, 25, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-15 16:30:30'),
-(78, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:21:01'),
-(79, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:21:02'),
-(80, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:21:02'),
-(81, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:56:38'),
-(82, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:56:39'),
-(83, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 11:56:40'),
-(84, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:02:36'),
-(85, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:02:36'),
-(86, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:02:37'),
-(87, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:03:31'),
-(88, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:03:32'),
-(89, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:03:32'),
-(90, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:06:12'),
-(91, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:06:12'),
-(92, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:06:12'),
-(93, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:08:29'),
-(94, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:08:29'),
-(95, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:08:29'),
-(96, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:12:25'),
-(97, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:12:25'),
-(98, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:12:25'),
-(99, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:03'),
-(100, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:03'),
-(101, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:04'),
-(102, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:42'),
-(103, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:42'),
-(104, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:13:43'),
-(105, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:21:04'),
-(106, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:21:04'),
-(107, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:21:05'),
-(108, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:24:50'),
-(109, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:24:51'),
-(110, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:24:51'),
-(111, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:25:15'),
-(112, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:25:15'),
-(113, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:25:16'),
-(114, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:27:38'),
-(115, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:27:39'),
-(116, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:27:39'),
-(117, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:32:25'),
-(118, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:32:26'),
-(119, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:32:26'),
-(120, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:34:02'),
-(121, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:34:02'),
-(122, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:34:03'),
-(123, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:34:59'),
-(124, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:34:59'),
-(125, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:35:00'),
-(126, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:35:48'),
-(127, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:35:48'),
-(128, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:35:49'),
-(129, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:37:26'),
-(130, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:37:26'),
-(131, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:37:27'),
-(132, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:39:20'),
-(133, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:39:21'),
-(134, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-16 12:39:21'),
-(135, 20, '✏️ Tu plantilla recurrente fue actualizada.', 0, '2025-07-16 15:45:16'),
-(136, 20, '✏️ Tu plantilla recurrente fue actualizada.', 0, '2025-07-16 15:56:30'),
-(137, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-17 12:56:40'),
-(138, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-17 12:56:41'),
-(139, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-17 12:56:41'),
-(140, 20, '❌ Tu plantilla recurrente fue rechazada.', 0, '2025-07-17 16:39:19'),
-(141, 20, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-17 16:44:00'),
-(142, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 16:44:02'),
-(143, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 16:44:02'),
-(144, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 16:44:02'),
-(145, 26, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-17 21:47:57'),
-(146, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 21:47:57'),
-(147, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 21:47:58'),
-(148, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-17 21:47:58'),
-(149, 20, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-18 00:16:57'),
-(150, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:16:58'),
-(151, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:16:58'),
-(152, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:16:58'),
-(153, 20, '❌ Tu plantilla recurrente fue rechazada.', 0, '2025-07-18 00:43:14'),
-(154, 20, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-18 00:46:27'),
-(155, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:46:27'),
-(156, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:46:28'),
-(157, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:46:28'),
-(158, 20, '❌ Tu plantilla recurrente fue rechazada.', 0, '2025-07-18 00:47:29'),
-(159, 20, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-18 00:48:25'),
-(160, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:48:26'),
-(161, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:48:26'),
-(162, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:48:26'),
-(163, 26, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-18 00:49:25'),
-(164, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:49:25'),
-(165, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:49:26'),
-(166, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:49:26'),
-(167, 26, '✅ Tu plantilla recurrente fue aprobada.', 0, '2025-07-18 00:52:00'),
-(168, 6, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:52:00'),
-(169, 22, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:52:01'),
-(170, 24, '📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.', 0, '2025-07-18 00:52:01'),
-(171, 20, '❌ Tu plantilla recurrente fue rechazada.', 0, '2025-07-18 00:52:08'),
-(172, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:16:50'),
-(173, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:16:52'),
-(174, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:16:52'),
-(175, 5, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:21:43'),
-(176, 23, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:21:45'),
-(177, 25, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-18 01:21:46'),
-(178, 26, '✏️ Tu plantilla recurrente fue actualizada.', 0, '2025-07-18 01:31:34');
+(1, 1, 'El usuario 1 (admin_general) eliminó usuario (ID: 2). Nombre: Solicitante Uno, Email: solicitante2@bechapra.com, Rol: solicitante', 1, '2025-07-20 02:36:27'),
+(2, 1, 'El usuario 1 (admin_general) creó usuario (ID: 7). Nombre: TEST , Email: kikegonzalez152@gmail.com, Rol: aprobador', 1, '2025-07-20 03:01:24'),
+(3, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 4)', 1, '2025-07-20 03:02:23'),
+(4, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 4). Nombre: Pagador Bechapra TEST, Email: pagador@bechapra.com, Rol: solicitante, Bloqueado: Sí', 1, '2025-07-20 03:04:18'),
+(5, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 4). Nombre: Pagador Bechapra TEST, Email: pagador@bechapra.com, Rol: pagador_banca, Bloqueado: No', 1, '2025-07-20 03:04:50'),
+(6, 1, 'El usuario 1 (admin_general) creó usuario (ID: 8). Nombre: KIKE , Email: kikeramirez160418@gmail.com, Rol: solicitante', 1, '2025-07-20 03:27:11'),
+(7, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 4). Nombre: Pagador Bechapra, Email: pagador@bechapra.com, Rol: pagador_banca, Bloqueado: No', 0, '2025-07-20 03:35:52'),
+(8, 1, 'El usuario \"Desconocido\" realizó la acción: actualizó sobre usuario (ID: 4).\nNombre: Pagador Bechapra, Email: pagador@bechapra.com, Rol: pagador_banca, Bloqueado: Sí', 0, '2025-07-20 03:40:48'),
+(9, 1, 'El usuario 1 (admin_general) creó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante', 0, '2025-07-20 18:00:15'),
+(10, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante, Bloqueado: Sí', 0, '2025-07-20 18:05:41'),
+(11, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante, Bloqueado: No', 0, '2025-07-20 18:11:41'),
+(12, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: aprobador, Bloqueado: No', 0, '2025-07-20 18:29:32'),
+(13, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: pagador_banca, Bloqueado: No', 0, '2025-07-20 18:30:48'),
+(14, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante, Bloqueado: No', 0, '2025-07-20 19:06:54'),
+(15, 7, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-20 19:16:18'),
+(16, 1, 'El usuario 9 (solicitante) creó solicitud', 0, '2025-07-20 19:16:18'),
+(17, 7, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-20 22:36:48'),
+(18, 9, '¡Tu solicitud fue registrada exitosamente!', 0, '2025-07-20 22:36:48'),
+(19, 1, 'El usuario 9 (solicitante) creó solicitud', 0, '2025-07-20 22:36:48'),
+(20, 9, 'Has eliminado una solicitud correctamente.', 0, '2025-07-20 22:39:50'),
+(21, 9, '✏️ Has editado tu solicitud correctamente.', 0, '2025-07-20 22:43:38'),
+(22, 9, '✏️ Has editado tu solicitud correctamente.', 0, '2025-07-20 23:52:21'),
+(23, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: aprobador, Bloqueado: No', 0, '2025-07-21 00:01:59'),
+(24, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante, Bloqueado: No', 0, '2025-07-21 00:21:27'),
+(25, 1, 'El usuario 1 (admin_general) creó usuario (ID: 10). Nombre: TEST DOS, Email: test2@bechapra.com, Rol: aprobador', 0, '2025-07-21 00:22:12'),
+(26, 9, '✅ Tu solicitud fue autorizada.', 0, '2025-07-21 00:23:52'),
+(28, 1, 'El usuario 10 (aprobador) actualizó solicitud (ID: 1). Nuevo estado: autorizada', 0, '2025-07-21 00:23:52'),
+(29, 9, '❌ Tu solicitud fue rechazada.', 0, '2025-07-21 00:32:37'),
+(30, 10, '❌ Rechazaste la solicitud (ID: 1).', 0, '2025-07-21 00:32:37'),
+(31, 1, 'El usuario 10 (aprobador) actualizó solicitud (ID: 1). Nuevo estado: rechazada', 0, '2025-07-21 00:32:37'),
+(32, 9, '✅ Tu solicitud fue autorizada.', 0, '2025-07-21 00:34:07'),
+(34, 10, '✅ Autorizaste la solicitud (ID: 1) correctamente.', 0, '2025-07-21 00:34:07'),
+(35, 1, 'El usuario 10 (aprobador) actualizó solicitud (ID: 1). Nuevo estado: autorizada', 0, '2025-07-21 00:34:07'),
+(36, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 4). Nombre: TEST 3, Email: test3@bechapra.com, Rol: pagador_banca, Contraseña: (actualizada), Bloqueado: No', 0, '2025-07-21 00:52:14'),
+(37, 1, 'El usuario 1 (admin_general) eliminó usuario (ID: 4). Nombre: TEST 3, Email: test3@bechapra.com, Rol: pagador_banca', 0, '2025-07-21 00:53:31'),
+(38, 1, 'El usuario 1 (admin_general) creó usuario (ID: 11). Nombre: TEST 3, Email: test3@bechapra.com, Rol: pagador_banca', 0, '2025-07-21 00:54:00'),
+(39, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:17:15'),
+(40, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:17:15'),
+(41, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:26:15'),
+(42, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:26:15'),
+(43, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:35:34'),
+(44, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:35:34'),
+(45, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:42:59'),
+(46, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:42:59'),
+(47, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:46:42'),
+(48, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:46:42'),
+(49, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:50:48'),
+(50, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:50:48'),
+(51, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:53:15'),
+(52, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:53:15'),
+(53, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:59:51'),
+(54, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:59:51'),
+(55, 11, '✅ Marcaste como pagada la solicitud (ID: 1).', 0, '2025-07-21 01:59:51'),
+(56, 1, 'El usuario 11 (pagador_banca) subió comprobante (ID: 1). para la solicitud #1', 0, '2025-07-21 02:01:53');
 
 -- --------------------------------------------------------
 
@@ -284,17 +203,6 @@ CREATE TABLE `pagos_recurrentes` (
   `fecha_revision` datetime DEFAULT NULL,
   `comentario_aprobador` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `pagos_recurrentes`
---
-
-INSERT INTO `pagos_recurrentes` (`id_recurrente`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `concepto`, `tipo_pago`, `frecuencia`, `siguiente_fecha`, `activo`, `estado`, `fact_recurrente`, `id_aprobador`, `id_pagador`, `fecha_revision`, `comentario_aprobador`) VALUES
-(11, 20, 'nomina', 99999999.99, '0987654321000', 'KAKA  KAKAKA ANANAN ', 'administrativos', 'mensual', '0000-00-00', 1, 'aprobada', '/uploads/recurrente/1752702990801-946405865.png', 25, NULL, '2025-07-18 00:46:27', ''),
-(27, 20, 'tesoreria', 900.00, '323223243432', 'QQQMMM', 'viaticos', 'diario', '2025-07-27', 1, 'rechazada', '/uploads/recurrente/1752691160650-569966966.pdf', 25, NULL, '2025-07-18 00:47:29', 'Solicitud rechazada'),
-(28, 26, 'administracion', 123344.00, '323223243432', '1234', 'tarjeta', 'quincenal', '2025-08-03', 0, 'aprobada', '/uploads/recurrente/1752778600264-332568230.png', 25, NULL, '2025-07-18 00:52:00', 'Solicitud aprobada'),
-(29, 20, 'nomina', 99999999.99, '0987654321000', 'KAKA  KAKAKA ANANAN ', 'administrativos', 'mensual', '0000-00-00', 1, 'rechazada', '/uploads/recurrente/1752702990801-946405865.png', 25, NULL, '2025-07-18 00:52:08', 'Solicitud rechazada'),
-(31, 26, 'facturacion', 1234566.00, '0987654321', '0987654321', 'tarjeta', 'quincenal', '2025-08-01', 1, 'pendiente', '/uploads/recurrente/1752823303172-111871955.pdf', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -327,18 +235,7 @@ CREATE TABLE `solicitudes_pago` (
 --
 
 INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`) VALUES
-(11, 20, 'cobranza', 12342.00, '12345678907', '/uploads/facturas/1752171068008-464643402.png', 'prueba ', 'efectivo', '2025-08-09', 'pagada', 'Solicitud aprobada', '2025-07-10 12:11:08', 25, 22, '2025-07-11 11:05:20', '2025-07-11 11:08:37', NULL),
-(12, 20, 'automatizaciones', 42.00, '3454765', '/uploads/facturas/1752171426628-537657791.pdf', 'XDDD', 'efectivo', '2025-07-23', 'pagada', 'Solicitud aprobada', '2025-07-10 12:17:06', 23, 25, '2025-07-11 10:23:17', '2025-07-11 10:24:09', NULL),
-(13, 20, 'automatizaciones', 1000.00, '1234567890', '/uploads/facturas/1752173100147-909676920.pdf', 'PRUEBA ', 'efectivo', '2025-08-09', 'pendiente', NULL, '2025-07-10 12:45:00', NULL, NULL, NULL, NULL, NULL),
-(14, 20, 'ti', 2222222.00, '1234567890', '/uploads/facturas/1752173198561-209150711.png', '98765432', 'efectivo', '2025-08-09', 'pagada', 'bsb', '2025-07-10 12:46:38', 5, 22, '2025-07-11 11:25:30', '2025-07-11 11:26:49', NULL),
-(15, 20, 'vinculacion', 10033.00, '1234567890', '/uploads/facturas/1752173900916-983062405.png', 'test ', 'efectivo', '2025-08-09', 'pagada', NULL, '2025-07-10 12:58:20', NULL, 24, NULL, '2025-07-15 12:27:07', NULL),
-(17, 20, 'atencion a clientes', 1223344.00, '1234567890', '/uploads/facturas/1752176713500-269532798.png', 'test ', 'tarjeta', '2026-05-10', 'pendiente', NULL, '2025-07-10 13:45:13', NULL, NULL, NULL, NULL, NULL),
-(18, 20, 'cobranza', 400000.00, '76543098765432', '/uploads/facturas/1752177133885-761981579.png', 'esa', '', '2025-07-12', 'pagada', 'Solicitud aprobada', '2025-07-10 13:52:13', 23, 22, '2025-07-11 10:23:09', '2025-07-11 11:17:09', NULL),
-(19, 20, 'comercial', 2000.00, '76543098765432198765432', '/uploads/facturas/1752185844451-591752214.pdf', '65432', 'nominas', '2025-07-12', 'pagada', 'Solicitud aprobada', '2025-07-10 13:54:44', 25, 24, '2025-07-15 16:23:43', '2025-07-15 16:30:30', NULL),
-(24, 20, 'vinculacion', 2324.00, '1234567890', '/uploads/facturas/1752602415124-475189317.png', 'oiuyr', 'efectivo', '2025-08-03', 'pagada', 'Solicitud aprobada', '2025-07-15 12:00:15', 25, 24, '2025-07-15 12:01:51', '2025-07-15 12:02:14', NULL),
-(25, 20, 'atencion a clientes', 27.00, '217821782178127817', '/uploads/facturas/1752602867181-560794504.pdf', 'xd', 'factura', '2025-07-31', 'pagada', 'Solicitud aprobada', '2025-07-15 12:07:47', 25, 24, '2025-07-15 12:22:18', '2025-07-15 12:22:49', NULL),
-(26, 20, 'cobranza', 2345.00, '12345678900', '/uploads/facturas/1752608267551-638711069.png', '98765nhKKKK', 'nominas', '2025-08-31', 'pendiente', NULL, '2025-07-15 12:09:58', NULL, NULL, NULL, NULL, NULL),
-(27, 20, 'facturacion', 10234.00, '0987654321', '/uploads/facturas/1752618134259-989889925.pdf', 'test BIEN ', 'factura', '2025-09-01', 'pagada', 'Solicitud aprobada', '2025-07-15 12:28:53', 25, 24, '2025-07-15 16:26:25', '2025-07-15 16:27:09', NULL);
+(1, 9, 'vinculacion', 99999.00, '1234567890', '/uploads/facturas/1753077141913-572432086.png', 'TEST PARA LA NOTIFICACION. DOS PARA REGISTRAR LA NOTIFICACION DD', 'administrativos', '2025-08-02', 'pagada', 'Solicitud aprobada', '2025-07-20 19:16:18', 10, 11, '2025-07-21 00:34:07', '2025-07-21 01:59:51', NULL);
 
 -- --------------------------------------------------------
 
@@ -356,23 +253,22 @@ CREATE TABLE `usuarios` (
   `intentos_fallidos` int(11) DEFAULT 0,
   `bloqueado` tinyint(1) DEFAULT 0,
   `bloqueo_temporal_fin` datetime DEFAULT NULL,
-  `bloqueo_temporal_activado` tinyint(1) NOT NULL DEFAULT 0
+  `bloqueo_temporal_activado` tinyint(1) NOT NULL DEFAULT 0,
+  `verificado` tinyint(1) DEFAULT 0,
+  `email_token` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `creado_en`, `intentos_fallidos`, `bloqueado`, `bloqueo_temporal_fin`, `bloqueo_temporal_activado`) VALUES
-(3, 'Leonardo Admin', 'admin@bechapra.com', '$2b$10$d0r2Uhx4p2CXuns3ib6J/.uzbZHUxZ0db0vCqeSR5cN8H0pooorOu', 'admin_general', '2025-06-17 19:32:30', 0, 0, NULL, 0),
-(5, 'Aprobador Uno', 'aprobador@bechapra.com', '$2b$10$OFRyDdjyQlfAanLNzFXHR.mM/Tb6UCBp.q0xOujDbyDkurwhhcIqS', 'aprobador', '2025-06-17 19:32:30', 0, 0, NULL, 0),
-(6, 'Pagador Uno', 'pagador@bechapra.com', '$2b$10$GxEQD8KJE.7j6Qvsh.GQMOooJWXclLYwX.NL/mmDKOKXdlXUr36EW', 'pagador_banca', '2025-06-17 19:32:30', 0, 0, NULL, 0),
-(20, 'solicitante2', 'solicitante2@bechapra.com', '$2b$10$tse3xGwwf7y0grzZQYu0vu6naim.q4e2ZAwVi/HkVqUFn5jFx1A5.', 'solicitante', '2025-07-08 19:13:17', 0, 0, NULL, 0),
-(22, 'panchito', 'panchito@bechapra.com', '$2b$10$w.qpewn5UbNoqKnQwCdD4OH6qylpXGTb3XtxtRm5JX1q7tzCaXi1q', 'pagador_banca', '2025-07-08 22:38:13', 0, 0, NULL, 0),
-(23, 'luis enrike peña nito', 'kike@bechapra.com', '$2b$10$XSuScfUJGDDb9SIG8XM8S.DsOXuwxugsOyUH.ir4zgFlO8wd7dlVu', 'aprobador', '2025-07-09 19:18:52', 0, 0, NULL, 0),
-(24, 'luis enrike peña nieoto paga', 'kiike@bechapra.com', '$2b$10$RSvxGuvkQcuDcQV4KJ6JUuGagW.Bj9JpQkS0BeLVU00qq0xtz4Vbu', 'pagador_banca', '2025-07-09 19:19:42', 0, 0, NULL, 0),
-(25, 'leonardoApro', 'leo@bechapra.com', '$2b$10$ImUsJ97i58bFnKTySPXRVuDmm/VAvhj8WhoRXmY5wt/pCd652TSy.', 'aprobador', '2025-07-09 19:29:25', 0, 0, NULL, 0),
-(26, 'andres', 'andres@gmail.com', '$2b$10$PeOZ9UoU1rphg9Og4DkQMeZPxQULO/EZuJ1xvHtvD65ERWvpPK0uW', 'solicitante', '2025-07-15 21:48:02', 0, 0, NULL, 0);
+INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `creado_en`, `intentos_fallidos`, `bloqueado`, `bloqueo_temporal_fin`, `bloqueo_temporal_activado`, `verificado`, `email_token`) VALUES
+(1, 'Administrador Bechapra', 'enrique.bechapra@gmail.com', '$2b$10$xNzy0/pFv4tol00ZealTSOKLFsSUuRxs1LYb/z/9l3DxymRx8.DsW', 'admin_general', '2025-07-20 08:11:29', 0, 0, NULL, 0, 1, NULL),
+(7, 'TEST ', 'kikegonzalez152@gmail.com', '$2b$10$ZSTcEnUT/YAT0pSU7lFFNuTYV3hVGDiVfnDvRjJ9eDOQ0/HYTZvnW', 'aprobador', '2025-07-20 09:01:21', 0, 0, NULL, 0, 1, NULL),
+(8, 'KIKE ', 'kikeramirez160418@gmail.com', '$2b$10$HShmUIOTU05GESr53d7i4OOgMLIRdLFzRbWndVTxkLAJPkaUAWvnK', 'solicitante', '2025-07-20 09:27:09', 0, 0, NULL, 0, 1, NULL),
+(9, 'TEST BECHAPRA', 'test@bechapra.com', '$2b$10$b9x81t6ZXVb.MF.o9qYjvOVIRC7xURqJE/LYO9/4TyJqoYO7qD.wG', 'solicitante', '2025-07-21 00:00:12', 0, 0, NULL, 0, 1, NULL),
+(10, 'TEST DOS', 'test2@bechapra.com', '$2b$10$FP/xpm6qj.O7ewB9sJD/kO1PqqiufBGP9CUy8M.742oItcMWcB8bW', 'aprobador', '2025-07-21 06:22:11', 0, 0, NULL, 0, 1, NULL),
+(11, 'TEST 3', 'test3@bechapra.com', '$2b$10$EkpH8mOvYG7D0bz/lxOGg.PJPZAPz8U6yu.zIWZAc4sCCuLnYxubK', 'pagador_banca', '2025-07-21 06:53:59', 0, 0, NULL, 0, 1, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -393,6 +289,12 @@ ALTER TABLE `ejecuciones_recurrentes`
   ADD PRIMARY KEY (`id_ejecucion`),
   ADD KEY `id_recurrente` (`id_recurrente`),
   ADD KEY `id_solicitud` (`id_solicitud`);
+
+--
+-- Indices de la tabla `login_audit`
+--
+ALTER TABLE `login_audit`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `notificaciones`
@@ -434,7 +336,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `comprobantes_pago`
 --
 ALTER TABLE `comprobantes_pago`
-  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `ejecuciones_recurrentes`
@@ -443,28 +345,34 @@ ALTER TABLE `ejecuciones_recurrentes`
   MODIFY `id_ejecucion` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `login_audit`
+--
+ALTER TABLE `login_audit`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+
+--
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=179;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT de la tabla `pagos_recurrentes`
 --
 ALTER TABLE `pagos_recurrentes`
-  MODIFY `id_recurrente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id_recurrente` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `solicitudes_pago`
 --
 ALTER TABLE `solicitudes_pago`
-  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- Restricciones para tablas volcadas
