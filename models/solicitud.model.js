@@ -66,7 +66,10 @@ exports.crear = async (datos) => {
     factura_url,
     concepto,
     tipo_pago,
-    fecha_limite_pago
+    fecha_limite_pago,
+    tipo_cuenta_destino,
+    tipo_tarjeta,
+    banco_destino
   } = datos;
 
   // Validar formato CLABE (México)
@@ -106,9 +109,9 @@ exports.crear = async (datos) => {
 
   await pool.query(
     `INSERT INTO solicitudes_pago 
-    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio]
+    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino]
   );
 };
 
@@ -150,14 +153,20 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
     'monto = ?',
     'cuenta_destino = ?',
     'concepto = ?',
-    'tipo_pago = ?'
+    'tipo_pago = ?',
+    'tipo_cuenta_destino = ?',
+    'tipo_tarjeta = ?',
+    'banco_destino = ?'
   ];
   let setParams = [
     datos.departamento,
     datos.monto,
     datos.cuenta_destino,
     datos.concepto,
-    datos.tipo_pago
+    datos.tipo_pago,
+    datos.tipo_cuenta_destino,
+    datos.tipo_tarjeta,
+    datos.banco_destino
   ];
   if (typeof datos.factura_url === 'string' && datos.factura_url.length > 0) {
     setFields.push('factura_url = ?');

@@ -12,5 +12,8 @@ router.get("/:id", authMiddleware, autorizarRol("admin_general"), usuarioControl
 router.post("/", authMiddleware, autorizarRol("admin_general"), usuarioController.createUsuario);
 router.put("/:id", authMiddleware, autorizarRol("admin_general"), usuarioController.updateUsuario);
 router.delete("/:id", authMiddleware, autorizarRol("admin_general"), usuarioController.deleteUsuario);
+const authController = require("../controllers/authController");
+// Endpoint para cerrar sesión y marcar usuario como inactivo
+router.post("/logout", authMiddleware, authController.logout);
 
 module.exports = router;

@@ -122,10 +122,10 @@ exports.login = async (req, res) => {
       }
     }
 
-    // Contraseña correcta -> limpiar todo y permitir acceso
+    // Contraseña correcta -> limpiar todo y permitir acceso y marcar como activo
     await pool.query(`
       UPDATE usuarios
-      SET intentos_fallidos = 0, bloqueo_temporal_fin = NULL, bloqueo_temporal_activado = FALSE
+      SET intentos_fallidos = 0, bloqueo_temporal_fin = NULL, bloqueo_temporal_activado = FALSE, activo = 1
       WHERE id_usuario = ?
     `, [user.id_usuario]);
 
@@ -164,5 +164,18 @@ exports.obtenerHistorial = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener historial de ejecuciones" });
+  }
+};
+
+// Cerrar sesión: marcar usuario como inactivo
+exports.logout = async (req, res) => {
+  try {
+    const id_usuario = req.user?.id_usuario;
+    if (!id_usuario) return res.status(400).json({ message: 'Usuario no autenticado' });
+    await pool.query('UPDATE usuarios SET activo = FALSE WHERE id_usuario = ?', [id_usuario]);
+    res.json({ message: 'Sesión cerrada y usuario marcado como inactivo' });
+  } catch (error) {
+    console.error('Error en logout:', error);
+    res.status(500).json({ message: 'Error al cerrar sesión' });
   }
 };

@@ -2,7 +2,7 @@ const pool = require("../db/connection");
 
 // Obtener todos los usuarios
 const getAllUsuarios = async () => {
-  const [rows] = await pool.query("SELECT * FROM usuarios");
+  const [rows] = await pool.query("SELECT id_usuario, nombre, email, rol, creado_en, bloqueado, activo FROM usuarios");
   return rows;
 };
 
@@ -15,7 +15,7 @@ const getUsuarioByRol = async (rol) => {
 // Obtener un usuario por ID
 const getUsuarioById = async (id) => {
   const [rows] = await pool.query(
-    "SELECT id_usuario, nombre, email, rol, creado_en, bloqueado FROM usuarios WHERE id_usuario = ?",
+    "SELECT id_usuario, nombre, email, rol, creado_en, bloqueado, activo FROM usuarios WHERE id_usuario = ?",
     [id]
   );
   return rows[0];

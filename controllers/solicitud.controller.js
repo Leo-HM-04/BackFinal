@@ -65,12 +65,15 @@ exports.createSolicitud = async (req, res) => {
       concepto: Joi.string().min(3).max(255).required(),
       tipo_pago: Joi.string().min(2).max(50).optional(),
       fecha_limite_pago: Joi.date().iso().optional(),
+      tipo_cuenta_destino: Joi.string().valid('CLABE', 'Tarjeta').required(),
+      tipo_tarjeta: Joi.string().valid('Débito', 'Crédito').allow(null, ''),
+      banco_destino: Joi.string().max(100).allow(null, '')
     });
     const { error, value } = schema.validate(req.body);
     if (error) {
       return res.status(400).json({ error: 'Datos inválidos', details: error.details });
     }
-    const { departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago } = value;
+    const { departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino } = value;
 
     const { id_usuario } = req.user;
 
@@ -88,6 +91,9 @@ exports.createSolicitud = async (req, res) => {
       concepto,
       tipo_pago,
       fecha_limite_pago,
+      tipo_cuenta_destino,
+      tipo_tarjeta,
+      banco_destino
     });
 
     // Detalles para el correo
