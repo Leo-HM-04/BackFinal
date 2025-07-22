@@ -2,7 +2,7 @@ const pool = require("../db/connection");
 
 exports.getTodas = async () => {
   const [rows] = await pool.query(`
-    SELECT s.*, u.nombre AS nombre_usuario 
+    SELECT s.*, u.nombre AS usuario_nombre
     FROM solicitudes_pago s
     JOIN usuarios u ON s.id_usuario = u.id_usuario
   `);
@@ -23,7 +23,7 @@ exports.getTodas = async () => {
 // Obtener solicitudes de un usuario específico (rol solicitante)
 exports.getPorUsuario = async (id_usuario) => {
   const [rows] = await pool.query(`
-    SELECT s.*, u.nombre AS nombre_usuario 
+    SELECT s.*, u.nombre AS usuario_nombre
     FROM solicitudes_pago s
     JOIN usuarios u ON s.id_usuario = u.id_usuario
     WHERE s.id_usuario = ?
@@ -35,10 +35,10 @@ exports.getPorUsuario = async (id_usuario) => {
 // Obtener solo solicitudes autorizadas (para pagador_banca)
 exports.getAutorizadas = async () => {
   const [rows] = await pool.query(`
-    SELECT s.*, u.nombre AS nombre_usuario 
+    SELECT s.*, u.nombre AS usuario_nombre, a.nombre AS aprobador_nombre
     FROM solicitudes_pago s
     JOIN usuarios u ON s.id_usuario = u.id_usuario
-    WHERE s.estado = 'autorizada'
+    LEFT JOIN usuarios a ON s.id_aprobador = a.id_usuario
   `);
   return rows;
 };
@@ -57,6 +57,7 @@ exports.getPorId = async (id_solicitud) => {
 
 // Crear una nueva solicitud
 exports.crear = async (datos) => {
+
   const {
     id_usuario,
     departamento,
@@ -68,11 +69,46 @@ exports.crear = async (datos) => {
     fecha_limite_pago
   } = datos;
 
+  // Validar formato CLABE (México)
+  if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+    throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+  }
+
+  // Mapeo de abreviaturas
+  const abreviaturas = {
+    'contabilidad': 'CT',
+    'facturacion': 'FC',
+    'cobranza': 'CB',
+    'vinculacion': 'VN',
+    'administracion': 'AD',
+    'ti': 'TI',
+    'automatizaciones': 'AT',
+    'comercial': 'CM',
+    'atencion a clientes': 'AC',
+    'tesorería': 'TS',
+    'nomina': 'NM'
+  };
+  const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
+
+  // Buscar el último folio para el departamento
+  const [rows] = await pool.query(
+    `SELECT folio FROM solicitudes_pago WHERE folio LIKE ? ORDER BY id_solicitud DESC LIMIT 1`,
+    [`${abrev}-%`]
+  );
+  let numero = 1;
+  if (rows.length > 0 && rows[0].folio) {
+    const partes = rows[0].folio.split('-');
+    if (partes.length === 2 && !isNaN(parseInt(partes[1]))) {
+      numero = parseInt(partes[1]) + 1;
+    }
+  }
+  const folio = `${abrev}-${numero.toString().padStart(4, '0')}`;
+
   await pool.query(
     `INSERT INTO solicitudes_pago 
-    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago]
+    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio]
   );
 };
 
@@ -162,7 +198,7 @@ exports.eliminarSiSolicitantePendiente = async (id_solicitud, id_usuario) => {
 // Obtener solo solicitudes pagadas
 exports.getPagadas = async () => {
   const [rows] = await pool.query(`
-    SELECT s.*, u.nombre AS nombre_usuario 
+    SELECT s.*, u.nombre AS usuario_nombre
     FROM solicitudes_pago s
     JOIN usuarios u ON s.id_usuario = u.id_usuario
     WHERE s.estado = 'pagada'
@@ -173,7 +209,7 @@ exports.getPagadas = async () => {
 // Obtener las solicitudes autorizadas y pagadas de pagador_banca
 exports.getAutorizadasYPagadas = async () => {
   const [rows] = await pool.query(`
-    SELECT s.*, u.nombre AS nombre_usuario, a.nombre AS aprobador_nombre
+    SELECT s.*, u.nombre AS usuario_nombre, a.nombre AS aprobador_nombre
     FROM solicitudes_pago s
     JOIN usuarios u ON s.id_usuario = u.id_usuario
     LEFT JOIN usuarios a ON s.id_aprobador = a.id_usuario

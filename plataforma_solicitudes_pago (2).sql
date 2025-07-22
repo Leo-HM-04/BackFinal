@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 21-07-2025 a las 10:19:25
+-- Tiempo de generación: 22-07-2025 a las 09:42:32
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -103,7 +103,19 @@ INSERT INTO `login_audit` (`id`, `email`, `ip`, `fecha`, `exito`) VALUES
 (25, 'test2@bechapra.com', '::1', '2025-07-21 00:22:54', 1),
 (26, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:51:02', 1),
 (27, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 00:52:58', 1),
-(28, 'test3@bechapra.com', '::1', '2025-07-21 00:54:34', 1);
+(28, 'test3@bechapra.com', '::1', '2025-07-21 00:54:34', 1),
+(29, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 02:25:05', 1),
+(30, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 02:32:46', 1),
+(31, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 02:40:17', 1),
+(32, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 02:52:00', 1),
+(33, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 20:56:48', 1),
+(34, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 21:14:07', 1),
+(35, 'solicitante2@bechapra.com', '::1', '2025-07-21 22:14:06', 0),
+(36, 'test@bechapra.com', '::1', '2025-07-21 22:14:23', 1),
+(37, 'test@bechapra.com', '::1', '2025-07-21 22:43:36', 1),
+(38, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 22:50:13', 1),
+(39, 'test2@bechapra.com', '::1', '2025-07-21 22:56:51', 1),
+(40, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 23:19:19', 1);
 
 -- --------------------------------------------------------
 
@@ -177,7 +189,19 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leida
 (53, 9, '💸 Tu solicitud ha sido pagada.', 0, '2025-07-21 01:59:51'),
 (54, 10, '💸 Se pagó la solicitud que aprobaste.', 0, '2025-07-21 01:59:51'),
 (55, 11, '✅ Marcaste como pagada la solicitud (ID: 1).', 0, '2025-07-21 01:59:51'),
-(56, 1, 'El usuario 11 (pagador_banca) subió comprobante (ID: 1). para la solicitud #1', 0, '2025-07-21 02:01:53');
+(56, 1, 'El usuario 11 (pagador_banca) subió comprobante (ID: 1). para la solicitud #1', 0, '2025-07-21 02:01:53'),
+(57, 7, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-21 22:15:16'),
+(58, 10, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-21 22:15:16'),
+(59, 9, '¡Tu solicitud fue registrada exitosamente!', 0, '2025-07-21 22:15:17'),
+(60, 1, 'El usuario 9 (solicitante) creó solicitud', 0, '2025-07-21 22:15:17'),
+(61, 9, '✏️ Has editado tu solicitud correctamente.', 0, '2025-07-21 22:17:04'),
+(62, 7, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:18:42'),
+(63, 10, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:18:42'),
+(64, 9, '¡Tu plantilla recurrente fue registrada exitosamente!', 0, '2025-07-21 22:18:44'),
+(65, 7, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:21:29'),
+(66, 10, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:21:29'),
+(67, 9, '¡Tu plantilla recurrente fue registrada exitosamente!', 0, '2025-07-21 22:21:31'),
+(68, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 10). Nombre: TEST DOS, Email: test2@bechapra.com, Rol: aprobador, Bloqueado: Sí', 0, '2025-07-22 00:51:17');
 
 -- --------------------------------------------------------
 
@@ -201,8 +225,18 @@ CREATE TABLE `pagos_recurrentes` (
   `id_aprobador` int(11) DEFAULT NULL,
   `id_pagador` int(11) DEFAULT NULL,
   `fecha_revision` datetime DEFAULT NULL,
-  `comentario_aprobador` text DEFAULT NULL
+  `comentario_aprobador` text DEFAULT NULL,
+  `folio` varchar(20) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `pagos_recurrentes`
+--
+
+INSERT INTO `pagos_recurrentes` (`id_recurrente`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `concepto`, `tipo_pago`, `frecuencia`, `siguiente_fecha`, `activo`, `estado`, `fact_recurrente`, `id_aprobador`, `id_pagador`, `fecha_revision`, `comentario_aprobador`, `folio`, `created_at`) VALUES
+(1, 9, 'automatizaciones', 234567.00, '234567867890', 'sxedcrftvygbuhnijm', 'efectivo', 'quincenal', '2025-07-31', 1, 'pendiente', '/uploads/recurrente/1753157919949-482000485.png', NULL, NULL, NULL, NULL, NULL, '2025-07-21 22:47:52'),
+(2, 9, 'automatizaciones', 12345678.00, '098765434567', 'XSDCRFVGBYHUN', 'administrativos', 'mensual', '2025-07-22', 1, 'pendiente', '/uploads/recurrente/1753158087670-475483814.png', NULL, NULL, NULL, NULL, 'AT-0001', '2025-07-21 22:47:52');
 
 -- --------------------------------------------------------
 
@@ -227,15 +261,17 @@ CREATE TABLE `solicitudes_pago` (
   `id_pagador` int(11) DEFAULT NULL,
   `fecha_revision` datetime DEFAULT NULL,
   `fecha_pago` datetime DEFAULT NULL,
-  `id_recurrente_origen` int(11) DEFAULT NULL
+  `id_recurrente_origen` int(11) DEFAULT NULL,
+  `folio` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `solicitudes_pago`
 --
 
-INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`) VALUES
-(1, 9, 'vinculacion', 99999.00, '1234567890', '/uploads/facturas/1753077141913-572432086.png', 'TEST PARA LA NOTIFICACION. DOS PARA REGISTRAR LA NOTIFICACION DD', 'administrativos', '2025-08-02', 'pagada', 'Solicitud aprobada', '2025-07-20 19:16:18', 10, 11, '2025-07-21 00:34:07', '2025-07-21 01:59:51', NULL);
+INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`, `folio`) VALUES
+(1, 9, 'vinculacion', 99999.00, '1234567890', '/uploads/facturas/1753077141913-572432086.png', 'TEST PARA LA NOTIFICACION. DOS PARA REGISTRAR LA NOTIFICACION DD', 'administrativos', '2025-08-02', 'pagada', 'Solicitud aprobada', '2025-07-20 19:16:18', 10, 11, '2025-07-21 00:34:07', '2025-07-21 01:59:51', NULL, NULL),
+(3, 9, 'administracion', 12345678.00, '1234567890', '/uploads/facturas/1753157714363-699632719.png', 'sxdcfvgb', 'efectivo', '2025-07-26', 'pendiente', NULL, '2025-07-21 22:15:14', NULL, NULL, NULL, NULL, NULL, 'CT-0001');
 
 -- --------------------------------------------------------
 
@@ -267,7 +303,7 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `cre
 (7, 'TEST ', 'kikegonzalez152@gmail.com', '$2b$10$ZSTcEnUT/YAT0pSU7lFFNuTYV3hVGDiVfnDvRjJ9eDOQ0/HYTZvnW', 'aprobador', '2025-07-20 09:01:21', 0, 0, NULL, 0, 1, NULL),
 (8, 'KIKE ', 'kikeramirez160418@gmail.com', '$2b$10$HShmUIOTU05GESr53d7i4OOgMLIRdLFzRbWndVTxkLAJPkaUAWvnK', 'solicitante', '2025-07-20 09:27:09', 0, 0, NULL, 0, 1, NULL),
 (9, 'TEST BECHAPRA', 'test@bechapra.com', '$2b$10$b9x81t6ZXVb.MF.o9qYjvOVIRC7xURqJE/LYO9/4TyJqoYO7qD.wG', 'solicitante', '2025-07-21 00:00:12', 0, 0, NULL, 0, 1, NULL),
-(10, 'TEST DOS', 'test2@bechapra.com', '$2b$10$FP/xpm6qj.O7ewB9sJD/kO1PqqiufBGP9CUy8M.742oItcMWcB8bW', 'aprobador', '2025-07-21 06:22:11', 0, 0, NULL, 0, 1, NULL),
+(10, 'TEST DOS', 'test2@bechapra.com', '$2b$10$FP/xpm6qj.O7ewB9sJD/kO1PqqiufBGP9CUy8M.742oItcMWcB8bW', 'aprobador', '2025-07-21 06:22:11', 0, 1, NULL, 0, 1, NULL),
 (11, 'TEST 3', 'test3@bechapra.com', '$2b$10$EkpH8mOvYG7D0bz/lxOGg.PJPZAPz8U6yu.zIWZAc4sCCuLnYxubK', 'pagador_banca', '2025-07-21 06:53:59', 0, 0, NULL, 0, 1, NULL);
 
 --
@@ -308,6 +344,7 @@ ALTER TABLE `notificaciones`
 --
 ALTER TABLE `pagos_recurrentes`
   ADD PRIMARY KEY (`id_recurrente`),
+  ADD UNIQUE KEY `folio` (`folio`),
   ADD KEY `pagos_recurrentes_ibfk_1` (`id_usuario`),
   ADD KEY `id_aprobador` (`id_aprobador`),
   ADD KEY `id_pagador` (`id_pagador`);
@@ -317,6 +354,7 @@ ALTER TABLE `pagos_recurrentes`
 --
 ALTER TABLE `solicitudes_pago`
   ADD PRIMARY KEY (`id_solicitud`),
+  ADD UNIQUE KEY `folio` (`folio`),
   ADD KEY `id_aprobador` (`id_aprobador`),
   ADD KEY `id_pagador` (`id_pagador`),
   ADD KEY `solicitudes_pago_ibfk_1` (`id_usuario`);
@@ -348,25 +386,25 @@ ALTER TABLE `ejecuciones_recurrentes`
 -- AUTO_INCREMENT de la tabla `login_audit`
 --
 ALTER TABLE `login_audit`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT de la tabla `pagos_recurrentes`
 --
 ALTER TABLE `pagos_recurrentes`
-  MODIFY `id_recurrente` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_recurrente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `solicitudes_pago`
 --
 ALTER TABLE `solicitudes_pago`
-  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`

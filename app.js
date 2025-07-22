@@ -40,6 +40,7 @@ app.use("/api/recurrentes", recurrenteRoutes); // 👈 NUEVO
 app.use("/api/tareas", tareasRoutes);
 app.use("/api/departamentos", departamentoRoutes);
 app.use("/api/comprobantes", comprobanteRoutes);
+app.use('/api/estadisticas', require('./routes/estadisticas.routes'));
 
 module.exports = app;
 

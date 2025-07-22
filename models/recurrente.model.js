@@ -23,6 +23,10 @@ exports.crearRecurrente = async (datos) => {
   if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !siguiente_fecha) {
     throw new Error('Faltan datos obligatorios');
   }
+  // Validar formato CLABE (México)
+  if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+    throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+  }
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
   }
@@ -35,11 +39,41 @@ exports.crearRecurrente = async (datos) => {
     throw new Error('La siguiente fecha debe ser igual o mayor a hoy');
   }
 
+  // Mapeo de abreviaturas
+  const abreviaturas = {
+    'contabilidad': 'CT',
+    'facturacion': 'FC',
+    'cobranza': 'CB',
+    'vinculacion': 'VN',
+    'administracion': 'AD',
+    'ti': 'TI',
+    'automatizaciones': 'AT',
+    'comercial': 'CM',
+    'atencion a clientes': 'AC',
+    'tesorería': 'TS',
+    'nomina': 'NM'
+  };
+  const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
+
+  // Buscar el último folio para el departamento
+  const [rows] = await pool.query(
+    `SELECT folio FROM pagos_recurrentes WHERE folio LIKE ? ORDER BY id_recurrente DESC LIMIT 1`,
+    [`${abrev}-%`]
+  );
+  let numero = 1;
+  if (rows.length > 0 && rows[0].folio) {
+    const partes = rows[0].folio.split('-');
+    if (partes.length === 2 && !isNaN(parseInt(partes[1]))) {
+      numero = parseInt(partes[1]) + 1;
+    }
+  }
+  const folio = `${abrev}-${numero.toString().padStart(4, '0')}`;
+
   await pool.query(`
     INSERT INTO pagos_recurrentes 
-    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, estado, fact_recurrente)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuenciaNormalizada, siguiente_fecha, fact_recurrente]
+    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, estado, fact_recurrente, folio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuenciaNormalizada, siguiente_fecha, fact_recurrente, folio]
   );
 
 };
@@ -51,7 +85,8 @@ exports.obtenerRecurrentesPorUsuario = async (id_usuario) => {
     `SELECT r.*, u.nombre AS nombre_usuario
      FROM pagos_recurrentes r
      JOIN usuarios u ON r.id_usuario = u.id_usuario
-     WHERE r.id_usuario = ?`,
+     WHERE r.id_usuario = ?
+     ORDER BY r.id_recurrente DESC`,
     [id_usuario]
   );
   return rows;
@@ -124,8 +159,24 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     tipo_pago,
     frecuencia,
     siguiente_fecha,
-    fact_recurrente
+    fact_recurrente 
   } = datos;
+
+  // Mapeo de abreviaturas
+  const abreviaturas = {
+    'contabilidad': 'CT',
+    'facturacion': 'FC',
+    'cobranza': 'CB',
+    'vinculacion': 'VN',
+    'administracion': 'AD',
+    'ti': 'TI',
+    'automatizaciones': 'AT',
+    'comercial': 'CM',
+    'atencion a clientes': 'AC',
+    'tesorería': 'TS',
+    'nomina': 'NM'
+  };
+  const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
 
   // Validaciones adicionales
   let frecuenciaNormalizada = frecuencia;
@@ -136,11 +187,11 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
   if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !siguiente_fecha) {
     throw new Error('Faltan datos obligatorios');
   }
+
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
   }
   // Comparar solo la parte de fecha (ignorar hora)
-  // La siguiente fecha debe ser igual o mayor al día de hoy
   const hoy = new Date();
   hoy.setHours(0,0,0,0);
   const fechaSiguiente = new Date(siguiente_fecha);
@@ -149,28 +200,29 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     throw new Error('La siguiente fecha debe ser igual o mayor a hoy');
   }
 
-  let query = `UPDATE pagos_recurrentes 
-     SET departamento = ?, monto = ?, cuenta_destino = ?, concepto = ?, tipo_pago = ?, frecuencia = ?, siguiente_fecha = ?`;
-  let params = [
-    departamento,
-    monto,
-    cuenta_destino,
-    concepto,
-    tipo_pago,
-    frecuenciaNormalizada,
-    siguiente_fecha
-  ];
-  if (fact_recurrente) {
-    query += ', fact_recurrente = ?';
-    params.push(fact_recurrente);
+  // Buscar el último folio para el departamento
+  const [rows] = await pool.query(
+    `SELECT folio FROM pagos_recurrentes WHERE folio LIKE ? ORDER BY id_recurrente DESC LIMIT 1`,
+    [`${abrev}-%`]
+  );
+  let numero = 1;
+  if (rows.length > 0 && rows[0].folio) {
+    const partes = rows[0].folio.split('-');
+    if (partes.length === 2 && !isNaN(parseInt(partes[1]))) {
+      numero = parseInt(partes[1]) + 1;
+    }
   }
-  query += ' WHERE id_recurrente = ? AND id_usuario = ? AND estado = "pendiente"';
-  params.push(id_recurrente, id_usuario);
-  const [result] = await pool.query(query, params);
+  const folio = `${abrev}-${numero.toString().padStart(4, '0')}`;
 
-
-  return result.affectedRows;
-};
+  await pool.query(`
+    INSERT INTO pagos_recurrentes 
+    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, estado, fact_recurrente, folio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuenciaNormalizada, siguiente_fecha, fact_recurrente, folio]
+  );
+  // Si necesitas devolver algo, puedes retornar true o el folio generado
+  return folio;
+}
 
 
 // 📜 Obtener historial completo (admin_general)
