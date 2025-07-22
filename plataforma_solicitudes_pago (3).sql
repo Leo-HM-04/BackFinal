@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-07-2025 a las 09:42:32
+-- Tiempo de generación: 23-07-2025 a las 01:00:49
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -115,7 +115,39 @@ INSERT INTO `login_audit` (`id`, `email`, `ip`, `fecha`, `exito`) VALUES
 (37, 'test@bechapra.com', '::1', '2025-07-21 22:43:36', 1),
 (38, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 22:50:13', 1),
 (39, 'test2@bechapra.com', '::1', '2025-07-21 22:56:51', 1),
-(40, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 23:19:19', 1);
+(40, 'enrique.bechapra@gmail.com', '::1', '2025-07-21 23:19:19', 1),
+(41, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 10:53:49', 1),
+(42, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 10:55:00', 1),
+(43, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 11:16:22', 1),
+(44, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 11:16:37', 1),
+(45, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 11:17:26', 1),
+(46, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 11:26:33', 1),
+(47, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 12:32:01', 1),
+(48, 'test@bechapra.com', '::1', '2025-07-22 12:32:47', 1),
+(49, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 12:36:32', 1),
+(50, 'test2@bechapra.com', '::1', '2025-07-22 12:37:21', 1),
+(51, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 13:37:47', 1),
+(52, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 13:38:20', 1),
+(53, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 13:42:32', 1),
+(54, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 13:49:29', 1),
+(55, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 13:49:57', 1),
+(56, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 15:37:08', 1),
+(57, 'test2@bechapra.com', '::1', '2025-07-22 15:38:57', 1),
+(58, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 15:40:00', 1),
+(59, 'test3@bechapra.com', '::1', '2025-07-22 15:40:32', 1),
+(60, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 15:42:27', 1),
+(61, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 15:59:35', 1),
+(62, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 15:59:54', 1),
+(63, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 16:00:28', 1),
+(64, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 16:06:03', 1),
+(65, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 16:08:53', 1),
+(66, 'test@bechapra.com', '::1', '2025-07-22 16:13:38', 1),
+(67, 'test2@bechapra.com', '::1', '2025-07-22 16:14:18', 1),
+(68, 'test3@bechapra.com', '::1', '2025-07-22 16:14:44', 1),
+(69, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 16:15:44', 1),
+(70, 'enrique.bechapra@gmail.com', '::1', '2025-07-22 16:17:45', 1),
+(71, 'test3@bechapra.com', '::1', '2025-07-22 16:18:08', 1),
+(72, 'test@bechapra.com', '::1', '2025-07-22 16:23:16', 1);
 
 -- --------------------------------------------------------
 
@@ -201,7 +233,19 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leida
 (65, 7, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:21:29'),
 (66, 10, '📋 Nueva plantilla recurrente pendiente de aprobación.', 0, '2025-07-21 22:21:29'),
 (67, 9, '¡Tu plantilla recurrente fue registrada exitosamente!', 0, '2025-07-21 22:21:31'),
-(68, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 10). Nombre: TEST DOS, Email: test2@bechapra.com, Rol: aprobador, Bloqueado: Sí', 0, '2025-07-22 00:51:17');
+(68, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 10). Nombre: TEST DOS, Email: test2@bechapra.com, Rol: aprobador, Bloqueado: Sí', 0, '2025-07-22 00:51:17'),
+(69, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 9). Nombre: TEST BECHAPRA, Email: test@bechapra.com, Rol: solicitante, Contraseña: (actualizada), Bloqueado: No', 0, '2025-07-22 12:32:26'),
+(70, 9, '✏️ Has editado tu solicitud correctamente.', 0, '2025-07-22 12:33:38'),
+(71, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 10). Nombre: TEST DOS, Email: test2@bechapra.com, Rol: aprobador, Contraseña: (actualizada), Bloqueado: No', 0, '2025-07-22 12:36:46'),
+(72, 1, 'El usuario 1 (admin_general) actualizó usuario (ID: 11). Nombre: TEST 3, Email: test3@bechapra.com, Rol: pagador_banca, Contraseña: (actualizada), Bloqueado: No', 0, '2025-07-22 12:37:09'),
+(73, 12, '🎉 ¡Bienvenido/a PEPE! Tu cuenta ha sido creada exitosamente.', 0, '2025-07-22 16:22:02'),
+(74, 1, '👤 Se ha creado un nuevo usuario:<br><b>Nombre:</b> PEPE<br><b>Email:</b> pspspsps@bechapra.com<br><b>Rol:</b> aprobador', 0, '2025-07-22 16:22:02'),
+(75, 1, 'El usuario 1 (admin_general) creó usuario (ID: 12). Nombre: PEPE, Email: pspspsps@bechapra.com, Rol: aprobador', 0, '2025-07-22 16:22:06'),
+(76, 7, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-22 16:59:04'),
+(77, 10, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-22 16:59:04'),
+(78, 12, '📥 Nueva solicitud pendiente de aprobación.', 0, '2025-07-22 16:59:04'),
+(79, 9, '¡Tu solicitud fue registrada exitosamente!', 0, '2025-07-22 16:59:05'),
+(80, 1, 'El usuario 9 (solicitante) creó solicitud', 0, '2025-07-22 16:59:05');
 
 -- --------------------------------------------------------
 
@@ -262,16 +306,20 @@ CREATE TABLE `solicitudes_pago` (
   `fecha_revision` datetime DEFAULT NULL,
   `fecha_pago` datetime DEFAULT NULL,
   `id_recurrente_origen` int(11) DEFAULT NULL,
-  `folio` varchar(20) DEFAULT NULL
+  `folio` varchar(20) DEFAULT NULL,
+  `tipo_cuenta_destino` varchar(20) NOT NULL DEFAULT 'CLABE',
+  `tipo_tarjeta` varchar(20) DEFAULT NULL,
+  `banco_destino` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `solicitudes_pago`
 --
 
-INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`, `folio`) VALUES
-(1, 9, 'vinculacion', 99999.00, '1234567890', '/uploads/facturas/1753077141913-572432086.png', 'TEST PARA LA NOTIFICACION. DOS PARA REGISTRAR LA NOTIFICACION DD', 'administrativos', '2025-08-02', 'pagada', 'Solicitud aprobada', '2025-07-20 19:16:18', 10, 11, '2025-07-21 00:34:07', '2025-07-21 01:59:51', NULL, NULL),
-(3, 9, 'administracion', 12345678.00, '1234567890', '/uploads/facturas/1753157714363-699632719.png', 'sxdcfvgb', 'efectivo', '2025-07-26', 'pendiente', NULL, '2025-07-21 22:15:14', NULL, NULL, NULL, NULL, NULL, 'CT-0001');
+INSERT INTO `solicitudes_pago` (`id_solicitud`, `id_usuario`, `departamento`, `monto`, `cuenta_destino`, `factura_url`, `concepto`, `tipo_pago`, `fecha_limite_pago`, `estado`, `comentario_aprobador`, `fecha_creacion`, `id_aprobador`, `id_pagador`, `fecha_revision`, `fecha_pago`, `id_recurrente_origen`, `folio`, `tipo_cuenta_destino`, `tipo_tarjeta`, `banco_destino`) VALUES
+(1, 9, 'vinculacion', 99999.00, '1234567890', '/uploads/facturas/1753077141913-572432086.png', 'TEST PARA LA NOTIFICACION. DOS PARA REGISTRAR LA NOTIFICACION DD', 'administrativos', '2025-08-02', 'pagada', 'Solicitud aprobada', '2025-07-20 19:16:18', 10, 11, '2025-07-21 00:34:07', '2025-07-21 01:59:51', NULL, NULL, 'CLABE', NULL, NULL),
+(3, 9, 'cobranza', 12345678.00, '1234567890', '/uploads/facturas/1753157714363-699632719.png', 'sxdcfvgb', 'efectivo', '2025-07-26', 'pendiente', NULL, '2025-07-21 22:15:14', NULL, NULL, NULL, NULL, NULL, 'CT-0001', 'CLABE', NULL, NULL),
+(4, 9, 'contabilidad', 900000.00, '123456789555555555', '/uploads/facturas/1753225142704-769080467.png', 'EWRE', 'factura', '2025-07-24', 'pendiente', NULL, '2025-07-22 16:59:02', NULL, NULL, NULL, NULL, NULL, 'CT-0002', 'Tarjeta', 'Débito', '');
 
 -- --------------------------------------------------------
 
@@ -291,20 +339,22 @@ CREATE TABLE `usuarios` (
   `bloqueo_temporal_fin` datetime DEFAULT NULL,
   `bloqueo_temporal_activado` tinyint(1) NOT NULL DEFAULT 0,
   `verificado` tinyint(1) DEFAULT 0,
-  `email_token` varchar(255) DEFAULT NULL
+  `email_token` varchar(255) DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `creado_en`, `intentos_fallidos`, `bloqueado`, `bloqueo_temporal_fin`, `bloqueo_temporal_activado`, `verificado`, `email_token`) VALUES
-(1, 'Administrador Bechapra', 'enrique.bechapra@gmail.com', '$2b$10$xNzy0/pFv4tol00ZealTSOKLFsSUuRxs1LYb/z/9l3DxymRx8.DsW', 'admin_general', '2025-07-20 08:11:29', 0, 0, NULL, 0, 1, NULL),
-(7, 'TEST ', 'kikegonzalez152@gmail.com', '$2b$10$ZSTcEnUT/YAT0pSU7lFFNuTYV3hVGDiVfnDvRjJ9eDOQ0/HYTZvnW', 'aprobador', '2025-07-20 09:01:21', 0, 0, NULL, 0, 1, NULL),
-(8, 'KIKE ', 'kikeramirez160418@gmail.com', '$2b$10$HShmUIOTU05GESr53d7i4OOgMLIRdLFzRbWndVTxkLAJPkaUAWvnK', 'solicitante', '2025-07-20 09:27:09', 0, 0, NULL, 0, 1, NULL),
-(9, 'TEST BECHAPRA', 'test@bechapra.com', '$2b$10$b9x81t6ZXVb.MF.o9qYjvOVIRC7xURqJE/LYO9/4TyJqoYO7qD.wG', 'solicitante', '2025-07-21 00:00:12', 0, 0, NULL, 0, 1, NULL),
-(10, 'TEST DOS', 'test2@bechapra.com', '$2b$10$FP/xpm6qj.O7ewB9sJD/kO1PqqiufBGP9CUy8M.742oItcMWcB8bW', 'aprobador', '2025-07-21 06:22:11', 0, 1, NULL, 0, 1, NULL),
-(11, 'TEST 3', 'test3@bechapra.com', '$2b$10$EkpH8mOvYG7D0bz/lxOGg.PJPZAPz8U6yu.zIWZAc4sCCuLnYxubK', 'pagador_banca', '2025-07-21 06:53:59', 0, 0, NULL, 0, 1, NULL);
+INSERT INTO `usuarios` (`id_usuario`, `nombre`, `email`, `password`, `rol`, `creado_en`, `intentos_fallidos`, `bloqueado`, `bloqueo_temporal_fin`, `bloqueo_temporal_activado`, `verificado`, `email_token`, `activo`) VALUES
+(1, 'Administrador Bechapra', 'enrique.bechapra@gmail.com', '$2b$10$xNzy0/pFv4tol00ZealTSOKLFsSUuRxs1LYb/z/9l3DxymRx8.DsW', 'admin_general', '2025-07-20 08:11:29', 0, 0, NULL, 0, 1, NULL, 0),
+(7, 'TEST ', 'kikegonzalez152@gmail.com', '$2b$10$ZSTcEnUT/YAT0pSU7lFFNuTYV3hVGDiVfnDvRjJ9eDOQ0/HYTZvnW', 'aprobador', '2025-07-20 09:01:21', 0, 0, NULL, 0, 1, NULL, 0),
+(8, 'KIKE ', 'kikeramirez160418@gmail.com', '$2b$10$HShmUIOTU05GESr53d7i4OOgMLIRdLFzRbWndVTxkLAJPkaUAWvnK', 'solicitante', '2025-07-20 09:27:09', 0, 0, NULL, 0, 0, NULL, 0),
+(9, 'TEST BECHAPRA', 'test@bechapra.com', '$2b$10$23JzsqS2040Q5IQ/AWITN.zLhdPKMMBsabgpDWJXaNOuE0Yqb6i9W', 'solicitante', '2025-07-21 00:00:12', 0, 0, NULL, 0, 1, NULL, 1),
+(10, 'TEST DOS', 'test2@bechapra.com', '$2b$10$n77gmOqwgPnAj6W6jpe3QO5IgPEsBPTt3g48AsXvwgq3Z3YXn0fru', 'aprobador', '2025-07-21 06:22:11', 0, 0, NULL, 0, 1, NULL, 0),
+(11, 'TEST 3', 'test3@bechapra.com', '$2b$10$9E/mKisR2qxcsP2w94bjP.JscfJtAaVR.0SkdzYVGxcWix85DhTHe', 'pagador_banca', '2025-07-21 06:53:59', 0, 0, NULL, 0, 1, NULL, 0),
+(12, 'PEPE', 'pspspsps@bechapra.com', '$2b$10$EuajPyQ32qTxBLSNDuWzD.8m0pfZ/.2qvpWPhKDziCKObWw4CSe2u', 'aprobador', '2025-07-22 22:22:00', 0, 0, NULL, 0, 1, NULL, 0);
 
 --
 -- Índices para tablas volcadas
@@ -386,13 +436,13 @@ ALTER TABLE `ejecuciones_recurrentes`
 -- AUTO_INCREMENT de la tabla `login_audit`
 --
 ALTER TABLE `login_audit`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- AUTO_INCREMENT de la tabla `pagos_recurrentes`
@@ -404,13 +454,13 @@ ALTER TABLE `pagos_recurrentes`
 -- AUTO_INCREMENT de la tabla `solicitudes_pago`
 --
 ALTER TABLE `solicitudes_pago`
-  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- Restricciones para tablas volcadas
