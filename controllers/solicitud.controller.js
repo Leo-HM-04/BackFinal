@@ -82,6 +82,19 @@ exports.createSolicitud = async (req, res) => {
       factura_url = `/uploads/facturas/${req.file.filename}`;
     }
 
+    // Validación adicional según tipo_cuenta_destino
+    if (tipo_cuenta_destino === 'CLABE') {
+      // CLABE: 18 dígitos numéricos
+      if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+        return res.status(400).json({ error: 'La cuenta CLABE debe tener exactamente 18 dígitos numéricos.' });
+      }
+    } else if (tipo_cuenta_destino === 'Tarjeta') {
+      // Tarjeta: 16 dígitos numéricos
+      if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+        return res.status(400).json({ error: 'El número de tarjeta debe tener exactamente 16 dígitos numéricos.' });
+      }
+    }
+
     await SolicitudModel.crear({
       id_usuario,
       departamento,
@@ -609,6 +622,9 @@ exports.editarSolicitud = async (req, res) => {
       concepto,
       tipo_pago,
       fecha_limite_pago,
+      tipo_cuenta_destino,
+      tipo_tarjeta,
+      banco_destino
     } = req.body;
 
     let factura_url = null;
@@ -628,6 +644,9 @@ exports.editarSolicitud = async (req, res) => {
         concepto,
         tipo_pago,
         fecha_limite_pago,
+        tipo_cuenta_destino,
+        tipo_tarjeta,
+        banco_destino
       },
       esAdminGeneral
     );

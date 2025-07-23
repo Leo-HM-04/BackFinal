@@ -72,9 +72,15 @@ exports.crear = async (datos) => {
     banco_destino
   } = datos;
 
-  // Validar formato CLABE (México)
-  if (!/^[0-9]{18}$/.test(cuenta_destino)) {
-    throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+  // Validar formato según tipo de cuenta destino
+  if (tipo_cuenta_destino === 'CLABE') {
+    if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+      throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+    }
+  } else if (tipo_cuenta_destino === 'Tarjeta') {
+    if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+      throw new Error('La tarjeta debe tener 16 dígitos numéricos');
+    }
   }
 
   // Mapeo de abreviaturas
@@ -147,7 +153,14 @@ exports.eliminar = async (id_solicitud) => {
 // Editar una solicitud si es del usuario y está pendiente, o si es admin_general
 exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esAdminGeneral = false) => {
   let query, params;
-  // Construir SET dinámico según si hay factura_url y/o fecha_limite_pago
+  // Obtener el departamento actual de la solicitud
+  const [solicitudRows] = await pool.query('SELECT departamento FROM solicitudes_pago WHERE id_solicitud = ?', [id_solicitud]);
+  const departamentoActual = solicitudRows.length > 0 ? solicitudRows[0].departamento : null;
+  // Obtener valores actuales para conservar si se envía vacío
+  const [actual] = await pool.query('SELECT tipo_cuenta_destino, tipo_tarjeta, banco_destino FROM solicitudes_pago WHERE id_solicitud = ?', [id_solicitud]);
+  const tipoCuentaDestino = (datos.tipo_cuenta_destino !== undefined && datos.tipo_cuenta_destino !== null && datos.tipo_cuenta_destino.trim() !== '') ? datos.tipo_cuenta_destino : actual[0]?.tipo_cuenta_destino;
+  const tipoTarjeta = (datos.tipo_tarjeta !== undefined && datos.tipo_tarjeta !== null && datos.tipo_tarjeta.trim() !== '') ? datos.tipo_tarjeta : actual[0]?.tipo_tarjeta;
+  const bancoDestino = (datos.banco_destino !== undefined && datos.banco_destino !== null && datos.banco_destino.trim() !== '') ? datos.banco_destino : actual[0]?.banco_destino;
   let setFields = [
     'departamento = ?',
     'monto = ?',
@@ -164,10 +177,41 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
     datos.cuenta_destino,
     datos.concepto,
     datos.tipo_pago,
-    datos.tipo_cuenta_destino,
-    datos.tipo_tarjeta,
-    datos.banco_destino
+    datos.tipo_cuenta_destino || tipoCuentaDestino,
+    datos.tipo_tarjeta || tipoTarjeta,
+    datos.banco_destino || bancoDestino
   ];
+  // Si el departamento cambió, generar nuevo folio
+  if (departamentoActual && datos.departamento && datos.departamento !== departamentoActual) {
+    const abreviaturas = {
+      'contabilidad': 'CT',
+      'facturacion': 'FC',
+      'cobranza': 'CB',
+      'vinculacion': 'VN',
+      'administracion': 'AD',
+      'ti': 'TI',
+      'automatizaciones': 'AT',
+      'comercial': 'CM',
+      'atencion a clientes': 'AC',
+      'tesorería': 'TS',
+      'nomina': 'NM'
+    };
+    const abrev = abreviaturas[datos.departamento.toLowerCase()] || 'XX';
+    const [rows] = await pool.query(
+      `SELECT folio FROM solicitudes_pago WHERE folio LIKE ? ORDER BY id_solicitud DESC LIMIT 1`,
+      [`${abrev}-%`]
+    );
+    let numero = 1;
+    if (rows.length > 0 && rows[0].folio) {
+      const partes = rows[0].folio.split('-');
+      if (partes.length === 2 && !isNaN(parseInt(partes[1]))) {
+        numero = parseInt(partes[1]) + 1;
+      }
+    }
+    const folio = `${abrev}-${numero.toString().padStart(4, '0')}`;
+    setFields.push('folio = ?');
+    setParams.push(folio);
+  }
   if (typeof datos.factura_url === 'string' && datos.factura_url.length > 0) {
     setFields.push('factura_url = ?');
     setParams.push(datos.factura_url);
