@@ -237,15 +237,15 @@ exports.obtenerHistorialCompleto = async () => {
   return rows;
 };
 // Marcar una recurrente como pagada (solo por rol pagador_banca)
-// exports.marcarComoPagadaRecurrente = async (id_recurrente, id_pagador) => {
-//   const [result] = await pool.query(
-//     `UPDATE pagos_recurrentes 
-//      SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
-//      WHERE id_recurrente = ? AND estado = 'aprobada'`,
-//     [id_pagador, id_recurrente]
-//   );
-//   return result.affectedRows;
-// };
+exports.marcarComoPagadaRecurrente = async (id_recurrente, id_pagador) => {
+  const [result] = await pool.query(
+    `UPDATE pagos_recurrentes 
+     SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
+     WHERE id_recurrente = ? AND estado = 'aprobada'`,
+    [id_pagador, id_recurrente]
+  );
+  return result.affectedRows;
+};
 
 // 📜 Obtener historial por usuario
 exports.obtenerHistorialPorUsuario = async (id_usuario) => {
@@ -275,3 +275,12 @@ exports.subirFacturaRecurrente = async (id_recurrente, fact_recurrente) => {
     [fact_recurrente, id_recurrente]
   );
 };
+
+// Subir comprobante recurrente
+exports.subirComprobanteRecurrente = async (id_recurrente, com_recurrente) => {
+  await pool.query(
+    `UPDATE pagos_recurrentes SET com_recurrente = ? WHERE id_recurrente = ?`,
+    [com_recurrente, id_recurrente]
+  );
+};
+

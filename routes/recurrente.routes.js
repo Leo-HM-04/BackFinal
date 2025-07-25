@@ -39,12 +39,13 @@ router.get("/:id/historial", authMiddleware, controller.obtenerHistorial);
 
 
 // Marcar como pagada (pagador_banca)
-// router.put(
-//   "/:id/pagar",
-//   verificarToken,
-//   autorizarRol("pagador_banca", "admin_general"),
-//   controller.marcarComoPagadaRecurrente
-// );
+
+router.put(
+  "/:id/pagar",
+  authMiddleware,
+  autorizarRol("pagador_banca", "admin_general"),
+  controller.marcarComoPagadaRecurrente
+);
 
 // Subir factura recurrente (solicitante o admin_general)
 router.put('/:id/factura', authMiddleware, autorizarRol('solicitante', 'admin_general'), upload.single('factura'), controller.subirFacturaRecurrente);
@@ -58,8 +59,8 @@ router.get("/aprobadas", authMiddleware, autorizarRol("pagador_banca"), controll
 router.get("/aprobadas", authMiddleware, autorizarRol("pagador_banca"), controller.obtenerAprobadasParaPagador);
 
 // 📄 Obtener plantillas recurrentes del usuario autenticado (solicitante)
-router.get("/", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.obtenerRecurrentes);
-router.get("/", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.obtenerRecurrentes);
+router.get("/", authMiddleware, autorizarRol("solicitante", "admin_general", "pagador_banca"), controller.obtenerRecurrentes);
+router.get("/", authMiddleware, autorizarRol("solicitante", "admin_general", "pagador_banca"), controller.obtenerRecurrentes);
 
 // 📄 Crear plantilla recurrente (solicitante)
 router.post("/", authMiddleware, autorizarRol("solicitante", "admin_general"), upload.single('fact_recurrente'), controller.crearRecurrente);
@@ -68,5 +69,8 @@ router.post("/", authMiddleware, autorizarRol("solicitante", "admin_general"), u
 // 📄 Obtener una plantilla recurrente por ID (solicitante o admin_general)
 router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
 router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
+
+// Subir comprobante de pago (pagador_banca o admin_general)
+router.put('/:id/comprobante', authMiddleware, autorizarRol('pagador_banca', 'admin_general'), upload.single('comprobante'), controller.subirComprobanteRecurrente);
 
 module.exports = router;

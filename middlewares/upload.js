@@ -4,11 +4,13 @@ const path = require("path");
 // Configurar dónde y cómo se guarda el archivo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Guardar en la carpeta correcta según el campo
+    // Guardar en la carpeta correcta según el campo y la ruta
     if (file.fieldname === 'factura') {
       cb(null, "uploads/facturas");
     } else if (file.fieldname === 'fact_recurrente') {
       cb(null, "uploads/recurrente");
+    } else if (file.fieldname === 'comprobante' && req.baseUrl.includes('/recurrentes')) {
+      cb(null, "uploads/comprobante-recurrentes");
     } else {
       cb(null, "uploads/comprobantes");
     }

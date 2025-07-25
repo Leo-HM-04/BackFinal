@@ -1,4 +1,3 @@
-
 /* ──────────────────────────────────────────────────────────────
    Controlador de Plantillas Recurrentes
    Con notificaciones (BD + WS + correo) – Flujo acordado
@@ -211,13 +210,12 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
   }
 };
 
-
 /* ────────────── Obtener plantillas del usuario ────────────── */
 exports.obtenerRecurrentes = async (req, res) => {
   try {
     const { id_usuario, rol } = req.user;
     let recurrentes;
-    if (rol === 'admin_general') {
+    if (rol === 'admin_general' || rol === 'pagador_banca') {
       recurrentes = await RecurrenteModel.obtenerTodas();
     } else {
       recurrentes = await RecurrenteModel.obtenerRecurrentesPorUsuario(id_usuario);
@@ -228,6 +226,7 @@ exports.obtenerRecurrentes = async (req, res) => {
     res.status(500).json({ error: "Error al obtener las plantillas recurrentes" });
   }
 };
+
 /* ────────────── Pausar o reactivar plantilla ────────────── */
 exports.cambiarEstadoActiva = async (req, res) => {
   try {
@@ -426,7 +425,6 @@ exports.rechazarRecurrente = async (req, res) => {
     res.status(500).json({ error: "Error al rechazar la plantilla" });
   }
 };
-
 
 /* ────────────── Eliminar plantilla ────────────── */
 exports.eliminarRecurrente = async (req, res) => {
@@ -774,3 +772,96 @@ exports.getRecurrentePorId = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener la plantilla recurrente' });
   }
 };
+
+exports.subirComprobanteRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario, rol } = req.user;
+    if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+    // Validar que la recurrente esté pagada
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) return res.status(404).json({ error: 'Plantilla no encontrada' });
+    if (recurrente.estado !== 'pagada') {
+      return res.status(400).json({ error: 'Solo puedes subir comprobante si la recurrente está pagada' });
+    }
+
+    // Guardar ruta en la BD usando el modelo
+    const com_recurrente = `/uploads/comprobante-recurrentes/${req.file.filename}`;
+    await RecurrenteModel.subirComprobanteRecurrente(id, com_recurrente);
+
+    // Obtener detalles y correos
+    const [det] = await pool.query(
+      `SELECT r.id_usuario AS idSolicitante,
+              us.email AS emailSolic,
+              us.nombre AS nombreSolic,
+              r.id_aprobador,
+              ua.email AS emailAprob,
+              ua.nombre AS nombreAprob,
+              r.departamento, r.monto, r.cuenta_destino, r.concepto, r.tipo_pago, r.frecuencia, r.siguiente_fecha
+       FROM pagos_recurrentes r
+       JOIN usuarios us ON us.id_usuario = r.id_usuario
+       LEFT JOIN usuarios ua ON ua.id_usuario = r.id_aprobador
+       WHERE r.id_recurrente = ?`,
+      [id]
+    );
+
+    if (det.length) {
+      const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha } = det[0];
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const detallesRecurrente = `
+        <b>ID:</b> ${id}<br>
+        <b>Departamento:</b> ${departamento}<br>
+        <b>Monto:</b> $${monto}<br>
+        <b>Cuenta destino:</b> ${cuenta_destino}<br>
+        <b>Concepto:</b> ${concepto}<br>
+        <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
+        <b>Frecuencia:</b> ${frecuencia || '-'}<br>
+        <b>Siguiente fecha:</b> ${siguiente_fecha || '-'}<br>
+        <b>Comprobante subido:</b> ${com_recurrente}<br>
+      `;
+      const { enviarCorreo } = require('../services/correoService');
+      if (adminRows.length > 0) {
+        const admin = adminRows[0];
+        await enviarCorreo({
+          para: admin.email,
+          asunto: 'Comprobante subido a plantilla recurrente',
+          nombre: admin.nombre,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+        });
+      }
+      if (id_aprobador && emailAprob) {
+        await enviarCorreo({
+          para: emailAprob,
+          asunto: 'Comprobante subido a plantilla recurrente',
+          nombre: nombreAprob,
+          link: url,
+          mensaje: `Se ha subido un comprobante a la plantilla recurrente que aprobaste:<br>${detallesRecurrente}`
+        });
+      }
+      if (emailSolic) {
+        await enviarCorreo({
+          para: emailSolic,
+          asunto: 'Comprobante subido a tu plantilla recurrente',
+          nombre: nombreSolic,
+          link: url,
+          mensaje: `Se ha subido un comprobante a tu plantilla recurrente:<br>${detallesRecurrente}`
+        });
+      }
+    }
+
+    await NotificacionService.crearNotificacion({
+      id_usuario,
+      mensaje: "💾 Se subió un comprobante a la plantilla recurrente.",
+      correo: req.user.email,
+    });
+
+    res.json({ message: "Comprobante subido correctamente", com_recurrente });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al subir comprobante recurrente" });
+  }
+};
+
