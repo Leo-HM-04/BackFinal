@@ -1,7 +1,7 @@
 {
   "name": "backend_pp",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test":  "jest",
     "start:pm2": "pm2 start server.js --name backend_pp"
