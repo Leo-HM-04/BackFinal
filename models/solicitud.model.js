@@ -270,3 +270,25 @@ exports.getAutorizadasYPagadas = async () => {
   `);
   return rows;
 }
+
+// Rechazar solicitudes en lote (solo por rol aprobador o admin_general)
+exports.rechazarLote = async (ids, id_aprobador, comentario_aprobador = null) => {
+  const [result] = await pool.query(
+    `UPDATE solicitudes_pago 
+     SET estado = 'rechazada', comentario_aprobador = ?, id_aprobador = ?, fecha_revision = NOW() 
+     WHERE id_solicitud IN (?) AND estado = 'pendiente'`,
+    [comentario_aprobador, id_aprobador, ids]
+  );
+  return result.affectedRows;
+};
+
+// Aprobar solicitudes en lote (solo por rol aprobador o admin_general)
+exports.aprobarLote = async (ids, id_aprobador, comentario_aprobador = null) => {
+  const [result] = await pool.query(
+    `UPDATE solicitudes_pago 
+     SET estado = 'autorizada', comentario_aprobador = ?, id_aprobador = ?, fecha_revision = NOW() 
+     WHERE id_solicitud IN (?) AND estado = 'pendiente'`,
+    [comentario_aprobador, id_aprobador, ids]
+  );
+  return result.affectedRows;
+};

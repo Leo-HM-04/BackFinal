@@ -26,6 +26,23 @@ router.post(
 // ✅ Obtener todas o propias según el rol
 router.get("/", authMiddleware, controller.getSolicitudes);
 
+
+// ✅ Aprobar solicitudes en lote (solo aprobador y admin_general)
+router.put(
+  "/aprobar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.marcarComoPagadasLote
+);
+
+// ✅ Rechazar solicitudes en lote (solo aprobador y admin_general)
+router.put(
+  "/rechazar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.rechazarLote
+);
+
 // ✅ Obtener una solicitud por ID
 router.get("/:id", authMiddleware, controller.getSolicitud);
 
@@ -129,4 +146,20 @@ router.get(
   authMiddleware,
   autorizarRol("admin_general"),
   controller.getRankingUsuariosSolicitudes
+);
+
+// ✅ Aprobar solicitudes en lote (solo aprobador y admin_general)
+router.put(
+  "/aprobar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.marcarComoPagadasLote
+);
+
+// ✅ Rechazar solicitudes en lote (solo aprobador y admin_general)
+router.put(
+  "/rechazar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.rechazarLote
 );

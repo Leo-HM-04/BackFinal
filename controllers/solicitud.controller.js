@@ -919,3 +919,186 @@ exports.getRankingUsuariosSolicitudes = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener ranking de usuarios' });
   }
 };
+
+
+// ──────────────── Aprobar solicitudes en lote (aprobador) ─────────────────
+exports.marcarComoPagadasLote = async (req, res) => {
+  try {
+    console.log('[BATCH-APROBAR] req.user:', req.user);
+    console.log('[BATCH-APROBAR] req.body:', req.body);
+    const { ids } = req.body; // Array de IDs de solicitudes
+    const { rol, id_usuario: id_aprobador } = req.user;
+
+    if (rol !== "aprobador" && rol !== "admin_general") {
+      return res.status(403).json({ error: "No tienes permisos para aprobar solicitudes" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Debes enviar un arreglo de IDs de solicitudes" });
+    }
+
+    // Solo aprobar las que están en estado 'pendiente'
+    const fechaRevision = new Date();
+    const [result] = await pool.query(
+      `UPDATE solicitudes_pago SET estado = 'autorizada', id_aprobador = ?, comentario_aprobador = ?, fecha_revision = ? WHERE id_solicitud IN (${ids.map(() => '?').join(',')}) AND estado = 'pendiente'`,
+      [id_aprobador, req.body.comentario_aprobador || '', fechaRevision, ...ids]
+    );
+
+    // Notificar y enviar correos solo si se actualizaron filas
+    if (result.affectedRows > 0) {
+      // Obtener detalles de las solicitudes actualizadas
+      const [solicitudes] = await pool.query(
+        `SELECT s.id_solicitud, s.id_usuario AS idSolicitante, us.email AS emailSolic, us.nombre AS nombreSolic,
+                s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+         FROM solicitudes_pago s
+         JOIN usuarios us ON us.id_usuario = s.id_usuario
+         WHERE s.id_solicitud IN (?)`,
+        [ids]
+      );
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const { enviarCorreo } = require('../services/correoService');
+      for (const s of solicitudes) {
+        const detallesSolicitud = `
+          <b>ID:</b> ${s.id_solicitud}<br>
+          <b>Departamento:</b> ${s.departamento}<br>
+          <b>Monto:</b> $${s.monto}<br>
+          <b>Cuenta destino:</b> ${s.cuenta_destino}<br>
+          <b>Concepto:</b> ${s.concepto}<br>
+          <b>Tipo de pago:</b> ${s.tipo_pago || '-'}<br>
+          <b>Fecha límite de pago:</b> ${s.fecha_limite_pago || '-'}<br>
+          ${s.factura_url ? `<b>Factura adjunta:</b> ${s.factura_url}<br>` : ''}
+        `;
+        // Correo al admin
+        if (adminRows.length > 0) {
+          const admin = adminRows[0];
+          await enviarCorreo({
+            para: admin.email,
+            asunto: 'Solicitud aprobada (lote)',
+            nombre: admin.nombre,
+            link: url,
+            mensaje: `El aprobador ID ${id_aprobador} ha <b>aprobado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+          });
+        }
+        // Correo al solicitante
+        if (s.emailSolic) {
+          await enviarCorreo({
+            para: s.emailSolic,
+            asunto: 'Tu solicitud ha sido aprobada (lote)',
+            nombre: s.nombreSolic,
+            link: url,
+            mensaje: `¡Tu solicitud ha sido <b>aprobada</b>!<br>${detallesSolicitud}`
+          });
+        }
+        // Notificaciones in-app
+        await NotificacionService.crearNotificacion({
+          id_usuario: s.idSolicitante,
+          mensaje: "✅ Tu solicitud fue autorizada.",
+          correo: s.emailSolic,
+        });
+        // Aprobador (su propio historial)
+        const [aprobador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]);
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: `✅ Autorizaste la solicitud (ID: ${s.id_solicitud}) correctamente (lote).`,
+          correo: aprobador[0]?.email
+        });
+      }
+    }
+
+    res.json({ message: `Solicitudes aprobadas: ${result.affectedRows}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al aprobar solicitudes" });
+  }
+};
+
+// ──────────────── Rechazar solicitudes en lote (aprobador) ─────────────────
+exports.rechazarLote = async (req, res) => {
+  try {
+    console.log('[BATCH-RECHAZAR] req.user:', req.user);
+    console.log('[BATCH-RECHAZAR] req.body:', req.body);
+    const { ids, comentario_aprobador } = req.body; // Array de IDs de solicitudes
+    const { rol, id_usuario: id_aprobador } = req.user;
+    if (rol !== "aprobador" && rol !== "admin_general") {
+      return res.status(403).json({ error: "No tienes permisos para rechazar solicitudes" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Debes enviar un arreglo de IDs de solicitudes" });
+    }
+
+    // Rechazar solo las que están en estado 'pendiente'
+    const fechaRevision = new Date();
+    const [result] = await pool.query(
+      `UPDATE solicitudes_pago SET estado = 'rechazada', id_aprobador = ?, comentario_aprobador = ?, fecha_revision = ? WHERE id_solicitud IN (${ids.map(() => '?').join(',')}) AND estado = 'pendiente'`,
+      [id_aprobador, comentario_aprobador, fechaRevision, ...ids]
+    );
+
+    if (result.affectedRows > 0) {
+      // Obtener detalles de las solicitudes rechazadas
+      const [solicitudes] = await pool.query(
+        `SELECT s.id_solicitud, s.id_usuario AS idSolicitante, us.email AS emailSolic, us.nombre AS nombreSolic,
+                s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+         FROM solicitudes_pago s
+         JOIN usuarios us ON us.id_usuario = s.id_usuario
+         WHERE s.id_solicitud IN (${ids.map(() => '?').join(',')})`,
+        [...ids]
+      );
+      const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
+      const url = 'https://bechapra.com';
+      const { enviarCorreo } = require('../services/correoService');
+      for (const s of solicitudes) {
+        const detallesSolicitud = `
+          <b>ID:</b> ${s.id_solicitud}<br>
+          <b>Departamento:</b> ${s.departamento}<br>
+          <b>Monto:</b> $${s.monto}<br>
+          <b>Cuenta destino:</b> ${s.cuenta_destino}<br>
+          <b>Concepto:</b> ${s.concepto}<br>
+          <b>Tipo de pago:</b> ${s.tipo_pago || '-'}<br>
+          <b>Fecha límite de pago:</b> ${s.fecha_limite_pago || '-'}<br>
+          ${s.factura_url ? `<b>Factura adjunta:</b> ${s.factura_url}<br>` : ''}
+          ${comentario_aprobador ? `<b>Comentario del aprobador:</b> ${comentario_aprobador}<br>` : ''}
+        `;
+        // Correo al admin
+        if (adminRows.length > 0) {
+          const admin = adminRows[0];
+          await enviarCorreo({
+            para: admin.email,
+            asunto: 'Solicitud rechazada (lote)',
+            nombre: admin.nombre,
+            link: url,
+            mensaje: `El aprobador ID ${id_aprobador} ha <b>rechazado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+          });
+        }
+        // Correo al solicitante
+        if (s.emailSolic) {
+          await enviarCorreo({
+            para: s.emailSolic,
+            asunto: 'Tu solicitud ha sido rechazada (lote)',
+            nombre: s.nombreSolic,
+            link: url,
+            mensaje: `Tu solicitud fue <b>rechazada</b>.<br>${detallesSolicitud}`
+          });
+        }
+        // Notificaciones in-app
+        await NotificacionService.crearNotificacion({
+          id_usuario: s.idSolicitante,
+          mensaje: "❌ Tu solicitud fue rechazada.",
+          correo: s.emailSolic,
+        });
+        // Aprobador (su propio historial)
+        const [aprobador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]);
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: `❌ Rechazaste la solicitud (ID: ${s.id_solicitud}) correctamente (lote).`,
+          correo: aprobador[0]?.email
+        });
+      }
+      return res.json({ success: true, message: `Se rechazaron ${result.affectedRows} solicitudes.` });
+    } else {
+      return res.status(404).json({ error: "No se rechazó ninguna solicitud (verifica estado)." });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al rechazar solicitudes en lote" });
+  }
+};
