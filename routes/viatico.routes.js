@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const autorizarRol = require("../middlewares/autorizarRol");
+
+const upload = require("../middlewares/upload");
 const controller = require("../controllers/viatico.controller");
 
 // Obtener todos los viáticos (según rol)
@@ -15,15 +17,18 @@ router.post(
   "/",
   authMiddleware,
   autorizarRol("solicitante", "admin_general"),
+  upload.single("viatico_url"), // <-- AGREGA ESTO
   controller.createViatico
 );
 
-// Actualizar viático
+// Editar viático (igual que solicitudes)
+
 router.put(
   "/:id",
   authMiddleware,
-  autorizarRol("solicitante", "admin_general", "aprobador", "pagador_banca"),
-  controller.actualizarViatico
+  autorizarRol("solicitante", "admin_general"),
+  upload.single("viatico_url"),
+  controller.editarViatico
 );
 
 // Eliminar viático
@@ -33,9 +38,6 @@ router.delete(
   autorizarRol("solicitante", "admin_general"),
   controller.eliminarViatico
 );
-
-
-const upload = require("../middlewares/upload");
 
 // Subir archivo de viático y actualizar viatico_url
 router.post(
