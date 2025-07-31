@@ -85,8 +85,8 @@ exports.createViatico = async (req, res) => {
     console.error(err);
     res.status(400).json({ error: err.message });
   }
-};
 
+};
 
 // Editar viático (igual que solicitudes)
 exports.editarViatico = async (req, res) => {
@@ -182,6 +182,142 @@ exports.subirArchivoViatico = async (req, res) => {
     await ViaticoModel.actualizar(id_viatico, { viatico_url: ruta });
     await registrarAccion({ req, accion: 'subir', entidad: 'viatico', entidadId: id_viatico });
     res.json({ message: "Archivo subido", viatico_url: ruta });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Aprobar viático individual
+exports.aprobarViatico = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario: id_aprobador } = req.user;
+    const { comentario_aprobador = '' } = req.body;
+    const filas = await ViaticoModel.actualizarEstado(id, 'autorizada', comentario_aprobador, id_aprobador);
+    if (filas === 0) {
+      return res.status(400).json({ error: 'No se puede aprobar: El viático no está pendiente o no existe.' });
+    }
+    // Notificar al solicitante
+    const viatico = await ViaticoModel.getPorId(id);
+    if (viatico && viatico.id_usuario) {
+      await NotificacionService.crearNotificacion({
+        id_usuario: viatico.id_usuario,
+        mensaje: `Tu viático folio ${viatico.folio} fue <b>aprobado</b>.`,
+        enviarWebSocket: true
+      });
+    }
+    await registrarAccion({ req, accion: 'aprobar', entidad: 'viatico', entidadId: id });
+    res.json({ message: 'Viático aprobado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Rechazar viático individual
+exports.rechazarViatico = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario: id_aprobador } = req.user;
+    const { comentario_aprobador = '' } = req.body;
+    const filas = await ViaticoModel.actualizarEstado(id, 'rechazada', comentario_aprobador, id_aprobador);
+    if (filas === 0) {
+      return res.status(400).json({ error: 'No se puede rechazar: El viático no está pendiente o no existe.' });
+    }
+    // Notificar al solicitante
+    const viatico = await ViaticoModel.getPorId(id);
+    if (viatico && viatico.id_usuario) {
+      await NotificacionService.crearNotificacion({
+        id_usuario: viatico.id_usuario,
+        mensaje: `Tu viático folio ${viatico.folio} fue <b>rechazado</b>.`,
+        enviarWebSocket: true
+      });
+    }
+    await registrarAccion({ req, accion: 'rechazar', entidad: 'viatico', entidadId: id });
+    res.json({ message: 'Viático rechazado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Aprobar viáticos en lote
+exports.aprobarLoteViaticos = async (req, res) => {
+  try {
+    const { ids = [], comentario_aprobador = '' } = req.body;
+    const { id_usuario: id_aprobador } = req.user;
+    if (!Array.isArray(ids) || !ids.length) {
+      return res.status(400).json({ error: 'Debes enviar un arreglo de IDs' });
+    }
+    const filas = await ViaticoModel.aprobarLote(ids, id_aprobador, comentario_aprobador);
+    // Notificar a los solicitantes de los viáticos aprobados
+    for (const id of ids) {
+      const viatico = await ViaticoModel.getPorId(id);
+      if (viatico && viatico.id_usuario) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: viatico.id_usuario,
+          mensaje: `Tu viático folio ${viatico.folio} fue <b>aprobado</b>.`,
+          enviarWebSocket: true
+        });
+      }
+    }
+    await registrarAccion({ req, accion: 'aprobar-lote', entidad: 'viatico', entidadId: ids.join(',') });
+    res.json({ message: `Se aprobaron ${filas} viáticos` });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Rechazar viáticos en lote
+exports.rechazarLoteViaticos = async (req, res) => {
+  try {
+    const { ids = [], comentario_aprobador = '' } = req.body;
+    const { id_usuario: id_aprobador } = req.user;
+    if (!Array.isArray(ids) || !ids.length) {
+      return res.status(400).json({ error: 'Debes enviar un arreglo de IDs' });
+    }
+    const filas = await ViaticoModel.rechazarLote(ids, id_aprobador, comentario_aprobador);
+    // Notificar a los solicitantes de los viáticos rechazados
+    for (const id of ids) {
+      const viatico = await ViaticoModel.getPorId(id);
+      if (viatico && viatico.id_usuario) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: viatico.id_usuario,
+          mensaje: `Tu viático folio ${viatico.folio} fue <b>rechazado</b>.`,
+          enviarWebSocket: true
+        });
+      }
+    }
+    await registrarAccion({ req, accion: 'rechazar-lote', entidad: 'viatico', entidadId: ids.join(',') });
+    res.json({ message: `Se rechazaron ${filas} viáticos` });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// ──────────────── Marcar viático como pagado (pagador) ────────────────
+exports.marcarComoPagado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol, id_usuario: id_pagador } = req.user;
+    if (rol !== "pagador_banca") {
+      return res.status(403).json({ error: "No tienes permisos para marcar el viático como pagado" });
+    }
+    const filas = await ViaticoModel.marcarComoPagado(id, id_pagador);
+    if (filas === 0) {
+      // Verifica el estado actual en BD para debug
+      const [rows] = await pool.query(
+        `SELECT estado FROM solicitudes_viaticos WHERE id_viatico = ?`,
+        [id]
+      );
+      const estadoActual = rows[0]?.estado;
+      return res.status(404).json({ error: `No se pudo marcar como pagado. Estado actual: ${estadoActual}` });
+    }
+    await registrarAccion({ req, accion: 'pagar', entidad: 'viatico', entidadId: id });
+    res.json({ message: "Viático marcado como pagado" });
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });

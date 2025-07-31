@@ -48,4 +48,51 @@ router.post(
   controller.subirArchivoViatico
 );
 
+// Aprobar o rechazar viático individual (solo aprobador y admin_general)
+router.put(
+  "/:id/aprobar",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.aprobarViatico
+);
+
+router.put(
+  "/:id/rechazar",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.rechazarViatico
+);
+
+// Aprobar/rechazar viáticos en lote (solo aprobador y admin_general)
+router.post(
+  "/aprobar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.aprobarLoteViaticos
+);
+
+// Rechazar viáticos en lote (solo aprobador y admin_general)
+router.post(
+  "/rechazar-lote",
+  authMiddleware,
+  autorizarRol("aprobador", "admin_general"),
+  controller.rechazarLoteViaticos
+);
+
+// Obtener viáticos del usuario autenticado
+router.get(
+  "/mios",
+  authMiddleware,
+  autorizarRol("solicitante", "admin_general"),
+  controller.getViaticos
+);
+
+// Marcar viático como pagado (solo pagador_banca y admin_general)
+router.put(
+  "/:id/pagar",
+  authMiddleware,
+  autorizarRol("pagador_banca", "admin_general"),
+  controller.marcarComoPagado
+);
+
 module.exports = router;

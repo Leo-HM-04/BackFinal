@@ -180,3 +180,62 @@ exports.eliminar = async (id_viatico) => {
     [id_viatico]
   );
 };
+
+// Aprobar o rechazar viático individual (solo por rol aprobador o admin_general)
+exports.actualizarEstado = async (id_viatico, estado, comentario_aprobador, id_aprobador) => {
+  const campos = [
+    'autorizada',
+    'rechazada'
+  ];
+  if (!campos.includes(estado)) return 0;
+  const [result] = await pool.query(
+    `UPDATE solicitudes_viaticos 
+    SET estado = ?, comentario_aprobador = ?, id_aprobador = ?, fecha_revision = NOW() 
+    WHERE id_viatico = ? AND estado = 'pendiente'`,
+    [estado, comentario_aprobador, id_aprobador, id_viatico]
+  );
+  return result.affectedRows;
+};
+
+// Aprobar viáticos en lote
+exports.aprobarLote = async (ids, id_aprobador, comentario_aprobador = null) => {
+  if (!Array.isArray(ids) || !ids.length) return 0;
+  // Si no se envía comentario, poner uno por defecto
+  const comentario = comentario_aprobador && comentario_aprobador.trim() !== ''
+    ? comentario_aprobador
+    : 'Solicitudes aprobadas en lote';
+  const [result] = await pool.query(
+    `UPDATE solicitudes_viaticos 
+    SET estado = 'autorizada', comentario_aprobador = ?, id_aprobador = ?, fecha_revision = NOW() 
+    WHERE id_viatico IN (?) AND estado = 'pendiente'`,
+    [comentario, id_aprobador, ids]
+  );
+  return result.affectedRows;
+};
+
+// Rechazar viáticos en lote
+exports.rechazarLote = async (ids, id_aprobador, comentario_aprobador = null) => {
+  if (!Array.isArray(ids) || !ids.length) return 0;
+  // Si no se envía comentario, poner uno por defecto
+  const comentario = comentario_aprobador && comentario_aprobador.trim() !== ''
+    ? comentario_aprobador
+    : 'Solicitudes rechazadas en lote';
+  const [result] = await pool.query(
+    `UPDATE solicitudes_viaticos 
+    SET estado = 'rechazada', comentario_aprobador = ?, id_aprobador = ?, fecha_revision = NOW() 
+    WHERE id_viatico IN (?) AND estado = 'pendiente'`,
+    [comentario, id_aprobador, ids]
+  );
+  return result.affectedRows;
+};
+
+// Marcar un viático como pagado (solo por rol pagador_banca)
+exports.marcarComoPagado = async (id_viatico, id_pagador) => {
+  const [result] = await pool.query(
+    `UPDATE solicitudes_viaticos 
+     SET estado = 'pagada', id_pagador = ?, fecha_pago = NOW()
+     WHERE id_viatico = ? AND estado = 'autorizada'`,
+    [id_pagador, id_viatico]
+  );
+  return result.affectedRows;
+};
