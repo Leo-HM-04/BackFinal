@@ -57,6 +57,9 @@ const { registrarAccion } = require('../services/accionLogger');
 
 exports.createSolicitud = async (req, res) => {
   try {
+    // DEBUG: Verificar los campos recibidos
+    console.log('[SOLICITUD] req.body:', req.body);
+    console.log('[SOLICITUD] req.file:', req.file);
     // Validación robusta con Joi
     const schema = Joi.object({
       departamento: Joi.string().min(2).max(100).required(),
@@ -64,6 +67,9 @@ exports.createSolicitud = async (req, res) => {
       cuenta_destino: Joi.string().min(6).max(30).required(),
       concepto: Joi.string().min(3).max(255).required(),
       tipo_pago: Joi.string().min(2).max(50).optional(),
+      tipo_pago_descripcion: Joi.string().allow(null, ''),
+      empresa_a_pagar: Joi.string().allow(null, ''),
+      nombre_persona: Joi.string().min(2).max(255).required(),
       fecha_limite_pago: Joi.date().iso().optional(),
       tipo_cuenta_destino: Joi.string().valid('CLABE', 'Tarjeta').required(),
       tipo_tarjeta: Joi.string().valid('Débito', 'Crédito').allow(null, ''),
@@ -73,7 +79,7 @@ exports.createSolicitud = async (req, res) => {
     if (error) {
       return res.status(400).json({ error: 'Datos inválidos', details: error.details });
     }
-    const { departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino } = value;
+    const { departamento, monto, cuenta_destino, concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino } = value;
 
     const { id_usuario } = req.user;
 
@@ -103,6 +109,9 @@ exports.createSolicitud = async (req, res) => {
       factura_url,
       concepto,
       tipo_pago,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona,
       fecha_limite_pago,
       tipo_cuenta_destino,
       tipo_tarjeta,
@@ -621,6 +630,9 @@ exports.editarSolicitud = async (req, res) => {
       cuenta_destino,
       concepto,
       tipo_pago,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona,
       fecha_limite_pago,
       tipo_cuenta_destino,
       tipo_tarjeta,
@@ -631,6 +643,23 @@ exports.editarSolicitud = async (req, res) => {
     if (req.file) {
       factura_url = `/uploads/facturas/${req.file.filename}`;
     }
+
+    // LOG de los campos recibidos y a actualizar
+    console.log('[EDITAR SOLICITUD] Campos recibidos:', {
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona,
+      fecha_limite_pago,
+      tipo_cuenta_destino,
+      tipo_tarjeta,
+      banco_destino,
+      factura_url
+    });
 
     const esAdminGeneral = rol === "admin_general";
     const filas = await SolicitudModel.editarSolicitudSiPendiente(
@@ -643,6 +672,9 @@ exports.editarSolicitud = async (req, res) => {
         factura_url,
         concepto,
         tipo_pago,
+        tipo_pago_descripcion,
+        empresa_a_pagar,
+        nombre_persona,
         fecha_limite_pago,
         tipo_cuenta_destino,
         tipo_tarjeta,
@@ -702,8 +734,7 @@ exports.editarSolicitud = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Error al editar la solicitud" });
   }
-};
-
+}
 // Subir comprobante de pago
 exports.subirComprobante = async (req, res) => {
   try {

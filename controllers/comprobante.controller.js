@@ -23,17 +23,20 @@ exports.subirComprobante = async (req, res) => {
     if (solicitud.estado !== 'pagada') {
       return res.status(400).json({ error: 'Solo se puede subir comprobante cuando la solicitud está pagada' });
     }
+    // Guarda la ruta relativa para servir el archivo correctamente
+    const rutaRelativa = `/uploads/comprobantes/${req.file.filename}`;
     const comprobante = {
       id_solicitud,
       nombre_archivo: req.file.originalname,
-      ruta_archivo: req.file.path,
+      ruta_archivo: rutaRelativa,
       usuario_subio: req.user.id_usuario,
       comentario
     };
     const id = await Comprobante.create(comprobante);
 
 
-    // Registrar acción y notificar admin
+
+    // Registrar acción
     await registrarAccion({
       req,
       accion: 'subió',
@@ -41,6 +44,21 @@ exports.subirComprobante = async (req, res) => {
       entidadId: id,
       mensajeExtra: `para la solicitud #${id_solicitud}`
     });
+
+    // Notificar al admin
+    try {
+      const [admins] = await usuarioModel.getAdmins();
+      const notificacionesService = require('../services/notificacionesService');
+      for (const admin of admins) {
+        await notificacionesService.crearNotificacion({
+          id_usuario: admin.id_usuario,
+          mensaje: `Se subió un comprobante para la solicitud #${id_solicitud}`,
+        });
+      }
+    } catch (e) {
+      // Si falla la notificación, solo loguea
+      console.error('Error notificando admin:', e);
+    }
 
     res.status(201).json({ id });
   } catch (err) {

@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
+// Middlewares
 const { helmet } = require('./middlewares/security');
 
 const path = require("path");
@@ -9,12 +10,8 @@ const path = require("path");
 // Servir archivos estáticos
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Middlewares
-
-
 // Seguridad: Helmet para headers seguros (centralizado)
 app.use(helmet());
-
 app.use(cors());
 app.use(express.json());
 
@@ -29,6 +26,8 @@ const notificacionesRoutes = require('./routes/notificaciones.routes');
 const comprobanteRoutes = require('./routes/comprobante.routes');
 const departamentoRoutes = require('./routes/departamento.routes');
 
+const comprobanteViaticoRoutes = require('./routes/comprobanteViatico.routes');
+
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
@@ -39,6 +38,8 @@ app.use("/api/tareas", tareasRoutes);
 app.use("/api/departamentos", departamentoRoutes);
 app.use("/api/comprobantes", comprobanteRoutes);
 app.use('/api/estadisticas', require('./routes/estadisticas.routes'));
+
+app.use("/api/comprobantes-viaticos", comprobanteViaticoRoutes);
 
 module.exports = app;
 

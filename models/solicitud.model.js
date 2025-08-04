@@ -66,6 +66,9 @@ exports.crear = async (datos) => {
     factura_url,
     concepto,
     tipo_pago,
+    tipo_pago_descripcion,
+    empresa_a_pagar,
+    nombre_persona,
     fecha_limite_pago,
     tipo_cuenta_destino,
     tipo_tarjeta,
@@ -115,9 +118,9 @@ exports.crear = async (datos) => {
 
   await pool.query(
     `INSERT INTO solicitudes_pago 
-    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino]
+    (id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, factura_url, concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona, fecha_limite_pago, folio, tipo_cuenta_destino, tipo_tarjeta, banco_destino]
   );
 };
 
@@ -157,16 +160,22 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
   const [solicitudRows] = await pool.query('SELECT departamento FROM solicitudes_pago WHERE id_solicitud = ?', [id_solicitud]);
   const departamentoActual = solicitudRows.length > 0 ? solicitudRows[0].departamento : null;
   // Obtener valores actuales para conservar si se envía vacío
-  const [actual] = await pool.query('SELECT tipo_cuenta_destino, tipo_tarjeta, banco_destino FROM solicitudes_pago WHERE id_solicitud = ?', [id_solicitud]);
+  const [actual] = await pool.query('SELECT tipo_cuenta_destino, tipo_tarjeta, banco_destino, tipo_pago_descripcion, empresa_a_pagar, nombre_persona FROM solicitudes_pago WHERE id_solicitud = ?', [id_solicitud]);
   const tipoCuentaDestino = (datos.tipo_cuenta_destino !== undefined && datos.tipo_cuenta_destino !== null && datos.tipo_cuenta_destino.trim() !== '') ? datos.tipo_cuenta_destino : actual[0]?.tipo_cuenta_destino;
   const tipoTarjeta = (datos.tipo_tarjeta !== undefined && datos.tipo_tarjeta !== null && datos.tipo_tarjeta.trim() !== '') ? datos.tipo_tarjeta : actual[0]?.tipo_tarjeta;
   const bancoDestino = (datos.banco_destino !== undefined && datos.banco_destino !== null && datos.banco_destino.trim() !== '') ? datos.banco_destino : actual[0]?.banco_destino;
+  const tipoPagoDescripcion = (datos.tipo_pago_descripcion !== undefined && datos.tipo_pago_descripcion !== null && String(datos.tipo_pago_descripcion).trim() !== '') ? datos.tipo_pago_descripcion : actual[0]?.tipo_pago_descripcion;
+  const empresaAPagar = (datos.empresa_a_pagar !== undefined && datos.empresa_a_pagar !== null && String(datos.empresa_a_pagar).trim() !== '') ? datos.empresa_a_pagar : actual[0]?.empresa_a_pagar;
+  const nombrePersona = (datos.nombre_persona !== undefined && datos.nombre_persona !== null && String(datos.nombre_persona).trim() !== '') ? datos.nombre_persona : actual[0]?.nombre_persona;
   let setFields = [
     'departamento = ?',
     'monto = ?',
     'cuenta_destino = ?',
     'concepto = ?',
     'tipo_pago = ?',
+    'tipo_pago_descripcion = ?',
+    'empresa_a_pagar = ?',
+    'nombre_persona = ?',
     'tipo_cuenta_destino = ?',
     'tipo_tarjeta = ?',
     'banco_destino = ?'
@@ -177,9 +186,12 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
     datos.cuenta_destino,
     datos.concepto,
     datos.tipo_pago,
-    datos.tipo_cuenta_destino || tipoCuentaDestino,
-    datos.tipo_tarjeta || tipoTarjeta,
-    datos.banco_destino || bancoDestino
+    tipoPagoDescripcion,
+    empresaAPagar,
+    nombrePersona,
+    tipoCuentaDestino,
+    tipoTarjeta,
+    bancoDestino
   ];
   // Si el departamento cambió, generar nuevo folio
   if (departamentoActual && datos.departamento && datos.departamento !== departamentoActual) {
