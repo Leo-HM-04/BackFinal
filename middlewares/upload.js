@@ -4,6 +4,10 @@ const path = require("path");
 // Configurar dónde y cómo se guarda el archivo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    console.log('📂 Upload fieldname:', file.fieldname);
+    console.log('📂 Upload originalname:', file.originalname);
+    console.log('📂 Upload route:', req.baseUrl);
+    
     // Guardar en la carpeta correcta según el campo y la ruta
     if (file.fieldname === 'factura') {
       cb(null, "uploads/facturas");
@@ -13,7 +17,12 @@ const storage = multer.diskStorage({
       cb(null, "uploads/viaticos");
     } else if (file.fieldname === 'comprobante' && req.baseUrl.includes('/recurrentes')) {
       cb(null, "uploads/comprobante-recurrentes");
+    } else if (file.fieldname === 'archivo') {
+      // Para comprobantes de viáticos
+      console.log('📂 Guardando archivo en uploads/comprobante-viaticos');
+      cb(null, "uploads/comprobante-viaticos");
     } else {
+      console.log('📂 Carpeta por defecto: uploads/comprobantes');
       cb(null, "uploads/comprobantes");
     }
   },
