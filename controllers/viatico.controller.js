@@ -42,17 +42,31 @@ exports.getViatico = async (req, res) => {
 
 exports.createViatico = async (req, res) => {
   try {
+    console.log('📝 Creando viático...');
+    console.log('📝 Headers:', req.headers);
+    console.log('📝 Body recibido:', req.body);
+    console.log('📝 Archivo recibido:', req.file);
+    console.log('📝 Usuario:', req.user);
+
     // Asegurar que req.body sea un objeto
-    if (!req.body || typeof req.body !== 'object') req.body = {};
+    if (!req.body || typeof req.body !== 'object') {
+      console.log('❌ req.body no es un objeto:', req.body);
+      req.body = {};
+    }
+
     // Si se sube archivo, asignar la ruta a viatico_url y eliminar viatico_url de req.body para evitar conflicto de tipos
     if (req.file) {
+      console.log('📁 Archivo subido:', req.file.filename);
       req.body.viatico_url = `/uploads/viaticos/${req.file.filename}`;
     } else {
+      console.log('⚠️ No se recibió archivo');
       // Si no hay archivo, asegurar que viatico_url sea string vacía o null
       req.body.viatico_url = req.body.viatico_url || '';
     }
+
     // Forzar el id_usuario autenticado
     req.body.id_usuario = req.user ? req.user.id_usuario : undefined;
+    console.log('👤 ID Usuario asignado:', req.body.id_usuario);
     const schema = Joi.object({
       id_usuario: Joi.number().required(),
       departamento: Joi.string().required(),
@@ -72,18 +86,41 @@ exports.createViatico = async (req, res) => {
       fecha_revision: Joi.date().allow(null),
       fecha_pago: Joi.date().allow(null),
       folio: Joi.string().allow(null, ''),
+      tipo_pago_descripcion: Joi.string().allow(null, ''),
+      empresa_a_pagar: Joi.string().allow(null, ''),
+      nombre_persona: Joi.string().required(),
     });
+    console.log('🔍 Validando datos con schema:', req.body);
     const datos = await schema.validateAsync(req.body, { convert: true });
+    console.log('✅ Datos validados:', datos);
+
+    console.log('💾 Creando viático en la base de datos...');
     const viatico = await ViaticoModel.crear(datos);
+    console.log('✅ Viático creado:', viatico);
+
     if (!req.user) {
-      console.error('No hay usuario autenticado en la petición');
+      console.error('❌ No hay usuario autenticado en la petición');
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
+
+    console.log('📝 Registrando acción...');
     await registrarAccion({ req, accion: 'crear', entidad: 'viatico', entidadId: viatico.id_viatico });
+    console.log('✅ Acción registrada');
+
+    console.log('🎉 Viático creado exitosamente');
     res.status(201).json(viatico);
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    console.error('❌ Error al crear viático:', err);
+    console.error('❌ Detalles del error:', {
+      message: err.message,
+      name: err.name,
+      stack: err.stack,
+      details: err.details // Para errores de Joi
+    });
+    res.status(400).json({ 
+      error: err.message,
+      details: err.details // Incluir detalles de validación si es un error de Joi
+    });
   }
 
 };
@@ -109,7 +146,10 @@ exports.editarViatico = async (req, res) => {
       fecha_limite_pago,
       tipo_cuenta_destino,
       tipo_tarjeta,
-      banco_destino
+      banco_destino,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona
     } = req.body;
     const datos = {
       departamento,
@@ -120,7 +160,10 @@ exports.editarViatico = async (req, res) => {
       fecha_limite_pago,
       tipo_cuenta_destino,
       tipo_tarjeta,
-      banco_destino
+      banco_destino,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona
     };
     // Solo incluir viatico_url si hay archivo nuevo
     if (viatico_url) {
@@ -141,6 +184,84 @@ exports.editarViatico = async (req, res) => {
     res.json({ message: "Viático editado correctamente" });
   } catch (err) {
     console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.actualizarViaticoConArchivo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol, id_usuario } = req.user;
+    const esAdminGeneral = rol === "admin_general";
+    
+    console.log('📝 Actualizando viático con archivo...');
+    console.log('📝 ID:', id);
+    console.log('📝 Body recibido:', req.body);
+    console.log('📝 Archivo recibido:', req.file);
+    
+    // Verificar si hay archivo
+    let viatico_url = null;
+    if (req.file) {
+      viatico_url = `/uploads/viaticos/${req.file.filename}`;
+    }
+    
+    // Tomar todos los campos permitidos del cuerpo
+    const {
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      fecha_limite_pago,
+      tipo_cuenta_destino,
+      tipo_tarjeta,
+      banco_destino,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona
+    } = req.body;
+    
+    const datos = {
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago: tipo_pago || "viaticos",
+      fecha_limite_pago,
+      tipo_cuenta_destino,
+      tipo_tarjeta,
+      banco_destino,
+      tipo_pago_descripcion,
+      empresa_a_pagar,
+      nombre_persona
+    };
+    
+    // Solo incluir viatico_url si hay archivo nuevo
+    if (viatico_url) {
+      datos.viatico_url = viatico_url;
+    }
+    
+    const filas = await ViaticoModel.editarViaticoSiPendiente(
+      id,
+      id_usuario,
+      datos,
+      esAdminGeneral
+    );
+    
+    if (filas === 0) {
+      return res.status(400).json({
+        error: "No se puede actualizar: El viático no está pendiente o no tienes permiso.",
+      });
+    }
+    
+    // Obtener el viático actualizado para devolverlo
+    const viaticoActualizado = await ViaticoModel.getPorId(id);
+    
+    await registrarAccion({ req, accion: 'actualizar_archivo', entidad: 'viatico', entidadId: id });
+    
+    res.json(viaticoActualizado);
+  } catch (err) {
+    console.error('Error al actualizar viático con archivo:', err);
     res.status(400).json({ error: err.message });
   }
 };

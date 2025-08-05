@@ -9,6 +9,12 @@ exports.crearRecurrente = async (datos) => {
     cuenta_destino,
     concepto,
     tipo_pago,
+    tipo_pago_descripcion,
+    empresa_a_pagar,
+    nombre_persona,
+    tipo_cuenta_destino,
+    tipo_tarjeta,
+    banco_destino,
     frecuencia,
     siguiente_fecha,
     fact_recurrente = null
@@ -23,10 +29,18 @@ exports.crearRecurrente = async (datos) => {
   if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !siguiente_fecha) {
     throw new Error('Faltan datos obligatorios');
   }
-  // Validar formato CLABE (México)
-  if (!/^[0-9]{18}$/.test(cuenta_destino)) {
-    throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+  
+  // Validar formato según tipo de cuenta destino
+  if (tipo_cuenta_destino === 'CLABE') {
+    if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+      throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+    }
+  } else if (tipo_cuenta_destino === 'Tarjeta') {
+    if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+      throw new Error('La tarjeta debe tener 16 dígitos numéricos');
+    }
   }
+  
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
   }
@@ -71,13 +85,12 @@ exports.crearRecurrente = async (datos) => {
 
   await pool.query(`
     INSERT INTO pagos_recurrentes 
-    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, estado, fact_recurrente, folio)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuenciaNormalizada, siguiente_fecha, fact_recurrente, folio]
+    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona, tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuencia, siguiente_fecha, estado, fact_recurrente, folio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona, tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuenciaNormalizada, siguiente_fecha, fact_recurrente, folio]
   );
 
 };
-
 
 // Obtener todas las plantillas activas del usuario
 exports.obtenerRecurrentesPorUsuario = async (id_usuario) => {
@@ -157,6 +170,12 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     cuenta_destino,
     concepto,
     tipo_pago,
+    tipo_pago_descripcion,
+    empresa_a_pagar,
+    nombre_persona,
+    tipo_cuenta_destino,
+    tipo_tarjeta,
+    banco_destino,
     frecuencia,
     siguiente_fecha,
     fact_recurrente 
@@ -187,6 +206,17 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
   if (!departamento || !monto || !cuenta_destino || !concepto || !tipo_pago || !siguiente_fecha) {
     throw new Error('Faltan datos obligatorios');
   }
+  
+  // Validar formato según tipo de cuenta destino
+  if (tipo_cuenta_destino === 'CLABE') {
+    if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+      throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
+    }
+  } else if (tipo_cuenta_destino === 'Tarjeta') {
+    if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+      throw new Error('La tarjeta debe tener 16 dígitos numéricos');
+    }
+  }
 
   if (isNaN(monto) || monto <= 0) {
     throw new Error('Monto inválido');
@@ -200,28 +230,30 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     throw new Error('La siguiente fecha debe ser igual o mayor a hoy');
   }
 
-  // Buscar el último folio para el departamento
-  const [rows] = await pool.query(
-    `SELECT folio FROM pagos_recurrentes WHERE folio LIKE ? ORDER BY id_recurrente DESC LIMIT 1`,
-    [`${abrev}-%`]
-  );
-  let numero = 1;
-  if (rows.length > 0 && rows[0].folio) {
-    const partes = rows[0].folio.split('-');
-    if (partes.length === 2 && !isNaN(parseInt(partes[1]))) {
-      numero = parseInt(partes[1]) + 1;
-    }
-  }
-  const folio = `${abrev}-${numero.toString().padStart(4, '0')}`;
+  // Actualizar la plantilla existente (en lugar de crear nueva)
+  let updateQuery = `
+    UPDATE pagos_recurrentes 
+    SET departamento = ?, monto = ?, cuenta_destino = ?, concepto = ?, tipo_pago = ?, 
+        tipo_pago_descripcion = ?, empresa_a_pagar = ?, nombre_persona = ?, 
+        tipo_cuenta_destino = ?, tipo_tarjeta = ?, banco_destino = ?, 
+        frecuencia = ?, siguiente_fecha = ?`;
+  
+  let queryParams = [departamento, monto, cuenta_destino, concepto, tipo_pago, 
+                     tipo_pago_descripcion, empresa_a_pagar, nombre_persona,
+                     tipo_cuenta_destino, tipo_tarjeta, banco_destino,
+                     frecuenciaNormalizada, siguiente_fecha];
 
-  await pool.query(`
-    INSERT INTO pagos_recurrentes 
-    (id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha, estado, fact_recurrente, folio)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuenciaNormalizada, siguiente_fecha, fact_recurrente, folio]
-  );
-  // Si necesitas devolver algo, puedes retornar true o el folio generado
-  return folio;
+  // Solo actualizar fact_recurrente si se proporciona
+  if (fact_recurrente !== undefined) {
+    updateQuery += `, fact_recurrente = ?`;
+    queryParams.push(fact_recurrente);
+  }
+
+  updateQuery += ` WHERE id_recurrente = ? AND id_usuario = ? AND estado = 'pendiente'`;
+  queryParams.push(id_recurrente, id_usuario);
+
+  const [result] = await pool.query(updateQuery, queryParams);
+  return result.affectedRows;
 }
 
 

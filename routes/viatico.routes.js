@@ -48,6 +48,15 @@ router.post(
   controller.subirArchivoViatico
 );
 
+// Actualizar viático con archivo específico por ID
+router.put(
+  "/:id/subir",
+  authMiddleware,
+  autorizarRol("solicitante", "admin_general"),
+  upload.single("viatico_file"),
+  controller.actualizarViaticoConArchivo
+);
+
 // Aprobar o rechazar viático individual (solo aprobador y admin_general)
 router.put(
   "/:id/aprobar",

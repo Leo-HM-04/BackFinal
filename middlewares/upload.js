@@ -13,7 +13,8 @@ const storage = multer.diskStorage({
       cb(null, "uploads/facturas");
     } else if (file.fieldname === 'fact_recurrente') {
       cb(null, "uploads/recurrente");
-    } else if (file.fieldname === 'viatico_url') {
+    } else if (file.fieldname === 'viatico_url' || file.fieldname === 'viatico_file') {
+      console.log('📂 Guardando archivo de viático en uploads/viaticos');
       cb(null, "uploads/viaticos");
     } else if (file.fieldname === 'comprobante' && req.baseUrl.includes('/recurrentes')) {
       cb(null, "uploads/comprobante-recurrentes");

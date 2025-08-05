@@ -53,7 +53,10 @@ exports.crear = async (datos) => {
     fecha_limite_pago,
     tipo_cuenta_destino,
     tipo_tarjeta,
-    banco_destino
+    banco_destino,
+    tipo_pago_descripcion,
+    empresa_a_pagar,
+    nombre_persona
   } = datos;
 
   // Mapeo de abreviaturas igual que solicitudes
@@ -89,9 +92,9 @@ exports.crear = async (datos) => {
   // Insertar el viático con folio
   const [result] = await pool.query(
     `INSERT INTO solicitudes_viaticos 
-      (id_usuario, departamento, monto, cuenta_destino, viatico_url, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino, folio)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id_usuario, departamento, monto, cuenta_destino, viatico_url, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino, folio]
+      (id_usuario, departamento, monto, cuenta_destino, viatico_url, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino, folio, tipo_pago_descripcion, empresa_a_pagar, nombre_persona)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id_usuario, departamento, monto, cuenta_destino, viatico_url, concepto, tipo_pago, fecha_limite_pago, tipo_cuenta_destino, tipo_tarjeta, banco_destino, folio, tipo_pago_descripcion, empresa_a_pagar, nombre_persona]
   );
   return { id_viatico: result.insertId, ...datos, folio };
 };
@@ -111,7 +114,8 @@ exports.editarViaticoSiPendiente = async (id_viatico, id_usuario, datos, esAdmin
   // Solo permitir actualizar campos válidos
   const camposPermitidos = [
     'departamento','monto','cuenta_destino','concepto','tipo_pago','fecha_limite_pago',
-    'tipo_cuenta_destino','tipo_tarjeta','banco_destino','viatico_url'
+    'tipo_cuenta_destino','tipo_tarjeta','banco_destino','viatico_url','tipo_pago_descripcion',
+    'empresa_a_pagar','nombre_persona'
   ];
   const setFields = [];
   const setParams = [];

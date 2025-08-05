@@ -14,7 +14,8 @@ exports.crearRecurrente = async (req, res) => {
     const { id_usuario } = req.user;
     const {
       departamento, monto, cuenta_destino,
-      concepto, tipo_pago, frecuencia, siguiente_fecha,
+      concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona,
+      tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuencia, siguiente_fecha,
     } = req.body;
 
     if (!departamento || !monto || !cuenta_destino || !concepto ||
@@ -28,7 +29,8 @@ exports.crearRecurrente = async (req, res) => {
     }
     await RecurrenteModel.crearRecurrente({
       id_usuario, departamento, monto, cuenta_destino,
-      concepto, tipo_pago, frecuencia, siguiente_fecha, fact_recurrente
+      concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona,
+      tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuencia, siguiente_fecha, fact_recurrente
     });
 
     // Detalles para el correo
@@ -38,6 +40,12 @@ exports.crearRecurrente = async (req, res) => {
       <b>Cuenta destino:</b> ${cuenta_destino}<br>
       <b>Concepto:</b> ${concepto}<br>
       <b>Tipo de pago:</b> ${tipo_pago}<br>
+      ${tipo_pago_descripcion ? `<b>Descripción tipo pago:</b> ${tipo_pago_descripcion}<br>` : ''}
+      ${empresa_a_pagar ? `<b>Empresa a pagar:</b> ${empresa_a_pagar}<br>` : ''}
+      ${nombre_persona ? `<b>Nombre persona:</b> ${nombre_persona}<br>` : ''}
+      ${tipo_cuenta_destino ? `<b>Tipo cuenta destino:</b> ${tipo_cuenta_destino}<br>` : ''}
+      ${tipo_tarjeta ? `<b>Tipo tarjeta:</b> ${tipo_tarjeta}<br>` : ''}
+      ${banco_destino ? `<b>Banco destino:</b> ${banco_destino}<br>` : ''}
       <b>Frecuencia:</b> ${frecuencia}<br>
       <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
       ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
@@ -480,7 +488,8 @@ exports.editarRecurrente = async (req, res) => {
     const { id_usuario, email } = req.user;
     const {
       departamento, monto, cuenta_destino,
-      concepto, tipo_pago, frecuencia, siguiente_fecha,
+      concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona,
+      tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuencia, siguiente_fecha,
     } = req.body;
 
     if (!departamento || !monto || !cuenta_destino || !concepto ||
@@ -494,7 +503,8 @@ exports.editarRecurrente = async (req, res) => {
     }
     const filas = await RecurrenteModel.editarRecurrenteSiPendiente(id, id_usuario, {
       departamento, monto, cuenta_destino,
-      concepto, tipo_pago, frecuencia, siguiente_fecha,
+      concepto, tipo_pago, tipo_pago_descripcion, empresa_a_pagar, nombre_persona,
+      tipo_cuenta_destino, tipo_tarjeta, banco_destino, frecuencia, siguiente_fecha,
       fact_recurrente
     });
 
@@ -518,6 +528,12 @@ exports.editarRecurrente = async (req, res) => {
       <b>Cuenta destino:</b> ${cuenta_destino}<br>
       <b>Concepto:</b> ${concepto}<br>
       <b>Tipo de pago:</b> ${tipo_pago}<br>
+      ${tipo_pago_descripcion ? `<b>Descripción tipo pago:</b> ${tipo_pago_descripcion}<br>` : ''}
+      ${empresa_a_pagar ? `<b>Empresa a pagar:</b> ${empresa_a_pagar}<br>` : ''}
+      ${nombre_persona ? `<b>Nombre persona:</b> ${nombre_persona}<br>` : ''}
+      ${tipo_cuenta_destino ? `<b>Tipo cuenta destino:</b> ${tipo_cuenta_destino}<br>` : ''}
+      ${tipo_tarjeta ? `<b>Tipo tarjeta:</b> ${tipo_tarjeta}<br>` : ''}
+      ${banco_destino ? `<b>Banco destino:</b> ${banco_destino}<br>` : ''}
       <b>Frecuencia:</b> ${frecuencia}<br>
       <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
       ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
