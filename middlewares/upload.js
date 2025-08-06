@@ -19,9 +19,14 @@ const storage = multer.diskStorage({
     } else if (file.fieldname === 'comprobante' && req.baseUrl.includes('/recurrentes')) {
       cb(null, "uploads/comprobante-recurrentes");
     } else if (file.fieldname === 'archivo') {
-      // Para comprobantes de viáticos
-      console.log('📂 Guardando archivo en uploads/comprobante-viaticos');
-      cb(null, "uploads/comprobante-viaticos");
+      // Determinar la carpeta correcta basada en la ruta
+      if (req.originalUrl && req.originalUrl.includes('/comprobantes-viaticos')) {
+        console.log('📂 Guardando archivo en uploads/comprobante-viaticos');
+        cb(null, "uploads/comprobante-viaticos");
+      } else {
+        console.log('📂 Guardando archivo en uploads/comprobantes');
+        cb(null, "uploads/comprobantes");
+      }
     } else {
       console.log('📂 Carpeta por defecto: uploads/comprobantes');
       cb(null, "uploads/comprobantes");
