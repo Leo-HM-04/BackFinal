@@ -66,11 +66,14 @@ router.get("/", authMiddleware, autorizarRol("solicitante", "admin_general", "pa
 router.post("/", authMiddleware, autorizarRol("solicitante", "admin_general"), upload.single('fact_recurrente'), controller.crearRecurrente);
 router.post("/", authMiddleware, autorizarRol("solicitante", "admin_general"), upload.single('fact_recurrente'), controller.crearRecurrente);
 
-// 📄 Obtener una plantilla recurrente por ID (solicitante o admin_general)
-router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
-router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
+// Obtener comprobantes de una plantilla recurrente (todos los roles) - ANTES de /:id
+router.get('/:id/comprobantes', authMiddleware, controller.obtenerComprobantesRecurrente);
 
 // Subir comprobante de pago (pagador_banca o admin_general)
 router.put('/:id/comprobante', authMiddleware, autorizarRol('pagador_banca', 'admin_general'), upload.single('comprobante'), controller.subirComprobanteRecurrente);
+
+// 📄 Obtener una plantilla recurrente por ID (solicitante o admin_general) - DESPUÉS de rutas específicas
+router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
+router.get("/:id", authMiddleware, autorizarRol("solicitante", "admin_general"), controller.getRecurrentePorId);
 
 module.exports = router;

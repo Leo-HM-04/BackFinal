@@ -881,3 +881,54 @@ exports.subirComprobanteRecurrente = async (req, res) => {
   }
 };
 
+/* ────────────── Obtener comprobantes de una plantilla recurrente ────────────── */
+exports.obtenerComprobantesRecurrente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🔍 Buscando comprobantes para recurrente ID:', id);
+    
+    // Verificar que la plantilla existe
+    const recurrente = await RecurrenteModel.getPorId(id);
+    if (!recurrente) {
+      return res.status(404).json({ error: 'Plantilla recurrente no encontrada' });
+    }
+
+    console.log('🔍 Plantilla encontrada, buscando comprobantes...');
+
+    // Obtener comprobantes de la plantilla recurrente
+    let comprobantes = [];
+    
+    try {
+      const [result] = await pool.query(
+        `SELECT 
+          id_recurrente as id,
+          com_recurrente as con_recurrente,
+          fecha_pago,
+          COALESCE(id_pagador, 'Sistema') as usuario_pago,
+          CASE 
+            WHEN estado = 'pagada' THEN 'Comprobante de pago procesado'
+            ELSE 'Comprobante disponible'
+          END as comentario
+         FROM pagos_recurrentes 
+         WHERE id_recurrente = ? 
+         AND com_recurrente IS NOT NULL
+         AND com_recurrente != ''
+         ORDER BY fecha_pago DESC`,
+        [id]
+      );
+      comprobantes = result;
+      console.log('✅ Comprobantes encontrados:', comprobantes.length);
+    } catch (error) {
+      console.log('❌ Error al obtener comprobantes:', error.message);
+      comprobantes = [];
+    }
+
+    console.log('🔍 Comprobantes finales a enviar:', comprobantes);
+    res.json(comprobantes);
+  } catch (err) {
+    console.error('❌ Error general al obtener comprobantes:', err);
+    res.status(500).json({ error: "Error al obtener comprobantes de la plantilla recurrente", details: err.message });
+  }
+};
+
