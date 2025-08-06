@@ -7,8 +7,13 @@ const { registrarAccion } = require('../services/accionLogger');
 exports.getViaticos = async (req, res) => {
   try {
     const { rol, id_usuario } = req.user;
+    const { estado } = req.query; // Obtener el parámetro estado de la query
     let viaticos = [];
-    if (rol === "solicitante") {
+    
+    // Si se especifica estado=pagado, obtener viáticos pagados
+    if (estado === 'pagado') {
+      viaticos = await ViaticoModel.getPagados();
+    } else if (rol === "solicitante") {
       viaticos = await ViaticoModel.getPorUsuario(id_usuario);
     } else if (rol === "pagador_banca") {
       viaticos = await ViaticoModel.getAutorizadas();

@@ -30,6 +30,19 @@ exports.getAutorizadas = async () => {
   return rows;
 };
 
+exports.getPagados = async () => {
+  const [rows] = await pool.query(`
+    SELECT v.*, u.nombre AS usuario_nombre, a.nombre AS aprobador_nombre, p.nombre AS pagador_nombre
+    FROM solicitudes_viaticos v
+    JOIN usuarios u ON v.id_usuario = u.id_usuario
+    LEFT JOIN usuarios a ON v.id_aprobador = a.id_usuario
+    LEFT JOIN usuarios p ON v.id_pagador = p.id_usuario
+    WHERE v.estado = 'pagada'
+    ORDER BY v.fecha_pago DESC
+  `);
+  return rows;
+};
+
 exports.getPorId = async (id_viatico) => {
   const [rows] = await pool.query(`
     SELECT v.*, u.nombre AS usuario_nombre
@@ -98,7 +111,6 @@ exports.crear = async (datos) => {
   );
   return { id_viatico: result.insertId, ...datos, folio };
 };
-
 
 // Editar un viático si es del usuario y está pendiente, o si es admin_general
 exports.editarViaticoSiPendiente = async (id_viatico, id_usuario, datos, esAdminGeneral = false) => {
