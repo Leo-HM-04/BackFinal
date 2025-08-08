@@ -26,7 +26,9 @@ const notificacionesRoutes = require('./routes/notificaciones.routes');
 const comprobanteRoutes = require('./routes/comprobante.routes');
 const departamentoRoutes = require('./routes/departamento.routes');
 
+
 const comprobanteViaticoRoutes = require('./routes/comprobanteViatico.routes');
+const aprobadorEstadisticasRoutes = require('./routes/aprobadorEstadisticas.routes');
 
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/auth", authRoutes);
@@ -39,7 +41,9 @@ app.use("/api/departamentos", departamentoRoutes);
 app.use("/api/comprobantes", comprobanteRoutes);
 app.use('/api/estadisticas', require('./routes/estadisticas.routes'));
 
+
 app.use("/api/comprobantes-viaticos", comprobanteViaticoRoutes);
+app.use("/api/estadisticas-aprobador", aprobadorEstadisticasRoutes);
 
 module.exports = app;
 
