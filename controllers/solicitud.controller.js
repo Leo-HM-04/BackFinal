@@ -120,13 +120,15 @@ exports.createSolicitud = async (req, res) => {
 
     // Detalles para el correo
     const detallesSolicitud = `
-      <b>Departamento:</b> ${departamento}<br>
-      <b>Monto:</b> $${monto}<br>
-      <b>Cuenta destino:</b> ${cuenta_destino}<br>
-      <b>Concepto:</b> ${concepto}<br>
-      <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
-      <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
-      ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
+      <table style='border-collapse:collapse; width:100%; max-width:420px; background:#f9fafb; border-radius:8px; overflow:hidden; font-size:15px; margin:16px 0;'>
+        <tr style='background:#2563eb; color:#fff;'><th colspan='2' style='padding:10px 0; font-size:16px;'>Detalles de la Solicitud</th></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Departamento:</td><td style='padding:8px 12px;'>${departamento}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Monto:</td><td style='padding:8px 12px;'>$${monto}</td></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Cuenta destino:</td><td style='padding:8px 12px;'>${cuenta_destino}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Concepto:</td><td style='padding:8px 12px;'>${concepto}</td></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Tipo de pago:</td><td style='padding:8px 12px;'>${tipo_pago || '-'}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Fecha límite de pago:</td><td style='padding:8px 12px;'>${fecha_limite_pago || '-'}</td></tr>
+      </table>
     `;
 
     // Enviar correo al admin_general
@@ -135,38 +137,44 @@ exports.createSolicitud = async (req, res) => {
     const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
+      const [solicitanteInfo] = await pool.query("SELECT nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+      const nombreSolicitante = solicitanteInfo[0]?.nombre || id_usuario;
       await enviarCorreo({
         para: admin.email,
-        asunto: 'Nueva solicitud creada en Bechapra',
+        asunto: 'Nueva solicitud registrada',
         nombre: admin.nombre,
         link: url,
-        mensaje: `Se ha creado una nueva solicitud por el usuario ID ${id_usuario}:<br>${detallesSolicitud}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>Nueva solicitud registrada</h2><p>El usuario <b>${nombreSolicitante}</b> ha registrado una nueva solicitud:</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Por favor, revisa la plataforma para más detalles.</p></div>`
       });
     }
 
     /** 🔔 Notificar a TODOS los aprobadores */
+    // Obtener nombre del solicitante para notificación personalizada
+    const [solicitanteInfoNotif] = await pool.query("SELECT nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    const nombreSolicNotif = solicitanteInfoNotif[0]?.nombre || id_usuario;
     const [aprobadores] = await pool.query(
       "SELECT id_usuario, email FROM usuarios WHERE rol = 'aprobador'"
     );
     for (const ap of aprobadores) {
       await NotificacionService.crearNotificacion({
         id_usuario: ap.id_usuario,
-        mensaje: "📥 Nueva solicitud pendiente de aprobación.",
+        mensaje: `📥 Tienes una nueva solicitud pendiente de aprobación de <b>${nombreSolicNotif}</b> por <b>$${monto}</b>.`,
         correo: ap.email,
       });
     }
     // Notificar al solicitante (correo con detalles)
     const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
+    const nombreSolicitanteCorreo = solicitante[0]?.nombre || '';
     await enviarCorreo({
       para: solicitante[0]?.email,
-      asunto: 'Solicitud registrada exitosamente',
-      nombre: solicitante[0]?.nombre,
+      asunto: '¡Tu solicitud ha sido registrada!',
+      nombre: nombreSolicitanteCorreo,
       link: url,
-      mensaje: `¡Tu solicitud fue registrada exitosamente!<br>${detallesSolicitud}`
+      mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>¡Solicitud registrada!</h2><p>Hola <b>${nombreSolicitanteCorreo}</b>,</p><p>Tu solicitud ha sido registrada correctamente y está en proceso de revisión.</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Puedes consultar el estado de tu solicitud en la plataforma.</p></div>`
     });
     await NotificacionService.crearNotificacion({
       id_usuario,
-      mensaje: "¡Tu solicitud fue registrada exitosamente!",
+      mensaje: `✅ ¡${nombreSolicitanteCorreo}, tu solicitud fue registrada exitosamente!`,
       correo: solicitante[0]?.email
     });
     // Registrar acción
@@ -210,30 +218,54 @@ exports.actualizarEstado = async (req, res) => {
       return res.status(404).json({ error: "Solicitud no encontrada o ya actualizada." });
     }
 
+
     /** Datos del solicitante (y su email) */
+    // Obtener datos completos y claros del solicitante y la solicitud
     const [sol] = await pool.query(
-      `SELECT s.id_usuario, u.email, u.nombre, s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
+      `SELECT 
+         s.id_usuario AS idSolicitante,
+         u.email AS emailSolicitante,
+         u.nombre AS nombreSolicitante,
+         s.departamento, s.monto, s.cuenta_destino, s.concepto, s.tipo_pago, s.fecha_limite_pago, s.factura_url
        FROM solicitudes_pago s
        JOIN usuarios u ON u.id_usuario = s.id_usuario
        WHERE s.id_solicitud = ?`,
       [id]
     );
-    const { id_usuario: idSolicitante, email, nombre, departamento, monto, cuenta_destino, concepto, tipo_pago, fecha_limite_pago, factura_url } = sol[0];
+    if (!sol.length) {
+      return res.status(404).json({ error: "No se encontraron datos del solicitante para la solicitud." });
+    }
+    const {
+      idSolicitante,
+      emailSolicitante: email,
+      nombreSolicitante: nombre,
+      departamento,
+      monto,
+      cuenta_destino,
+      concepto,
+      tipo_pago,
+      fecha_limite_pago,
+      factura_url
+    } = sol[0];
 
-    // Obtener info de admin y aprobador
+    // Obtener info de admin y aprobador (más robusto y preparado para múltiples admins)
     const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]);
+    const [aprobadorRows] = id_aprobador ? await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]) : [[]];
     const url = 'https://bechapra.com.mx';
+
+    // HTML profesional para detalles de la solicitud
     const detallesSolicitud = `
-      <b>ID:</b> ${id}<br>
-      <b>Departamento:</b> ${departamento}<br>
-      <b>Monto:</b> $${monto}<br>
-      <b>Cuenta destino:</b> ${cuenta_destino}<br>
-      <b>Concepto:</b> ${concepto}<br>
-      <b>Tipo de pago:</b> ${tipo_pago || '-'}<br>
-      <b>Fecha límite de pago:</b> ${fecha_limite_pago || '-'}<br>
-      ${factura_url ? `<b>Factura adjunta:</b> ${factura_url}<br>` : ''}
-      ${comentario_aprobador ? `<b>Comentario del aprobador:</b> ${comentario_aprobador}<br>` : ''}
+      <table style="border-collapse:collapse; width:100%; max-width:440px; background:#f9fafb; border-radius:8px; overflow:hidden; font-size:15px; margin:16px 0;">
+        <tr style="background:#2563eb; color:#fff;"><th colspan="2" style="padding:10px 0; font-size:16px;">Detalles de la Solicitud</th></tr>
+        <tr><td style="padding:8px 12px; font-weight:bold;">ID:</td><td style="padding:8px 12px;">${id}</td></tr>
+        <tr style="background:#f1f5f9;"><td style="padding:8px 12px; font-weight:bold;">Departamento:</td><td style="padding:8px 12px;">${departamento}</td></tr>
+        <tr><td style="padding:8px 12px; font-weight:bold;">Monto:</td><td style="padding:8px 12px;">$${monto}</td></tr>
+        <tr style="background:#f1f5f9;"><td style="padding:8px 12px; font-weight:bold;">Cuenta destino:</td><td style="padding:8px 12px;">${cuenta_destino}</td></tr>
+        <tr><td style="padding:8px 12px; font-weight:bold;">Concepto:</td><td style="padding:8px 12px;">${concepto}</td></tr>
+        <tr style="background:#f1f5f9;"><td style="padding:8px 12px; font-weight:bold;">Tipo de pago:</td><td style="padding:8px 12px;">${tipo_pago || '-'}</td></tr>
+        <tr><td style="padding:8px 12px; font-weight:bold;">Fecha límite de pago:</td><td style="padding:8px 12px;">${fecha_limite_pago || '-'}</td></tr>
+        ${comentario_aprobador ? `<tr><td style=\"padding:8px 12px; font-weight:bold;\">Comentario del aprobador:</td><td style=\"padding:8px 12px;\">${comentario_aprobador}</td></tr>` : ''}
+      </table>
     `;
     const { enviarCorreo } = require('../services/correoService');
 
@@ -246,7 +278,7 @@ exports.actualizarEstado = async (req, res) => {
           asunto: 'Solicitud aprobada',
           nombre: admin.nombre,
           link: url,
-          mensaje: `El aprobador ID ${id_aprobador} ha <b>aprobado</b> una solicitud:<br>${detallesSolicitud}`
+          mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#22c55e;'>Solicitud aprobada</h2><p>El aprobador <b>${aprobadorRows[0]?.nombre || id_aprobador}</b> ha aprobado una solicitud:</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Consulta la plataforma para más información.</p></div>`
         });
       }
       // Correo al aprobador
@@ -254,25 +286,25 @@ exports.actualizarEstado = async (req, res) => {
         const aprobador = aprobadorRows[0];
         await enviarCorreo({
           para: aprobador.email,
-          asunto: 'Confirmación de aprobación de solicitud',
+          asunto: '¡Aprobación registrada!',
           nombre: aprobador.nombre,
           link: url,
-          mensaje: `Has <b>aprobado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+          mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>¡Aprobación registrada!</h2><p>Hola <b>${aprobador.nombre}</b>,</p><p>Has aprobado la siguiente solicitud:</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Puedes consultar el historial de solicitudes en la plataforma.</p></div>`
         });
       }
       // Correo al solicitante
       await enviarCorreo({
         para: email,
-        asunto: 'Tu solicitud fue aprobada',
+        asunto: '¡Tu solicitud ha sido aprobada!',
         nombre: nombre,
         link: url,
-        mensaje: `¡Tu solicitud fue <b>aprobada</b>!<br>${detallesSolicitud}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#22c55e;'>¡Felicidades, tu solicitud fue aprobada!</h2><p>Hola <b>${nombre}</b>,</p><p>Nos complace informarte que tu solicitud ha sido aprobada y está lista para el siguiente paso.</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Puedes consultar el estado y seguimiento en la plataforma.</p></div>`
       });
       // 1) Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
-        id_usuario: idSolicitante,
-        mensaje: "✅ Tu solicitud fue autorizada.",
-        correo: email,
+  id_usuario: idSolicitante,
+  mensaje: `✅ ¡Felicidades ${nombre}! Tu solicitud fue autorizada por ${aprobadorRows[0]?.nombre ? `<b>${aprobadorRows[0].nombre}</b>` : 'el aprobador'}.`,
+  correo: email,
       });
       // 2) Pagadores
       const [pagadores] = await pool.query(
@@ -281,7 +313,7 @@ exports.actualizarEstado = async (req, res) => {
       for (const pg of pagadores) {
         await NotificacionService.crearNotificacion({
           id_usuario: pg.id_usuario,
-          mensaje: "📝 Nueva solicitud autorizada para pago.",
+          mensaje: `📝 Nueva solicitud autorizada para pago de <b>${nombre}</b> por <b>$${monto}</b>.`,
           correo: pg.email,
         });
       }
@@ -289,7 +321,7 @@ exports.actualizarEstado = async (req, res) => {
       if (aprobadorRows.length > 0) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: `✅ Autorizaste la solicitud (ID: ${id}) correctamente.`,
+          mensaje: `✅ ¡Aprobaste exitosamente la solicitud de <b>${nombre}</b> por <b>$${monto}</b>!`,
           correo: aprobadorRows[0].email
         });
       }
@@ -302,7 +334,7 @@ exports.actualizarEstado = async (req, res) => {
           asunto: 'Solicitud rechazada',
           nombre: admin.nombre,
           link: url,
-          mensaje: `El aprobador ID ${id_aprobador} ha <b>rechazado</b> una solicitud:<br>${detallesSolicitud}`
+          mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Solicitud rechazada</h2><p>El aprobador <b>${aprobadorRows[0]?.nombre || id_aprobador}</b> ha rechazado una solicitud:</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Consulta la plataforma para más información.</p></div>`
         });
       }
       // Correo al aprobador
@@ -310,10 +342,10 @@ exports.actualizarEstado = async (req, res) => {
         const aprobador = aprobadorRows[0];
         await enviarCorreo({
           para: aprobador.email,
-          asunto: 'Confirmación de rechazo de solicitud',
+          asunto: 'Rechazo de solicitud registrado',
           nombre: aprobador.nombre,
           link: url,
-          mensaje: `Has <b>rechazado</b> la siguiente solicitud:<br>${detallesSolicitud}`
+          mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Rechazo registrado</h2><p>Has rechazado la siguiente solicitud:</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Consulta el historial en la plataforma.</p></div>`
         });
       }
       // Correo al solicitante
@@ -322,19 +354,19 @@ exports.actualizarEstado = async (req, res) => {
         asunto: 'Tu solicitud fue rechazada',
         nombre: nombre,
         link: url,
-        mensaje: `Tu solicitud fue <b>rechazada</b>.<br>${detallesSolicitud}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Tu solicitud fue rechazada</h2><p>Hola <b>${nombre}</b>,</p><p>Lamentamos informarte que tu solicitud fue rechazada.</p>${detallesSolicitud}<p style='color:#888;font-size:13px;'>Puedes consultar los detalles en la plataforma.</p></div>`
       });
       // Rechazada → solo solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
-        id_usuario: idSolicitante,
-        mensaje: "❌ Tu solicitud fue rechazada.",
-        correo: email,
+  id_usuario: idSolicitante,
+  mensaje: `❌ ${nombre}, tu solicitud fue rechazada por ${aprobadorRows[0]?.nombre ? `<b>${aprobadorRows[0].nombre}</b>` : 'el aprobador'}.`,
+  correo: email,
       });
       // Aprobador (notificación in-app)
       if (aprobadorRows.length > 0) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: `❌ Rechazaste la solicitud (ID: ${id}).`,
+          mensaje: `❌ Rechazaste la solicitud de <b>${nombre}</b> por <b>$${monto}</b>.`,
           correo: aprobadorRows[0].email
         });
       }
@@ -448,7 +480,7 @@ exports.marcarComoPagada = async (req, res) => {
       // Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
-        mensaje: "💸 Tu solicitud ha sido pagada.",
+        mensaje: id_aprobador && nombreAprob ? `💸 Tu solicitud ha sido pagada por <b>${nombreAprob}</b>.` : "💸 Tu solicitud ha sido pagada.",
         correo: emailSolic,
       });
 
@@ -456,7 +488,7 @@ exports.marcarComoPagada = async (req, res) => {
       if (id_aprobador && emailAprob) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: "💸 Se pagó la solicitud que aprobaste.",
+          mensaje: nombrePagador ? `💸 <b>${nombrePagador}</b> marcó como pagada la solicitud que aprobaste.` : "💸 Se pagó la solicitud que aprobaste.",
           correo: emailAprob,
         });
       }

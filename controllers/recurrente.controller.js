@@ -35,20 +35,16 @@ exports.crearRecurrente = async (req, res) => {
 
     // Detalles para el correo
     const detallesRecurrente = `
-      <b>Departamento:</b> ${departamento}<br>
-      <b>Monto:</b> $${monto}<br>
-      <b>Cuenta destino:</b> ${cuenta_destino}<br>
-      <b>Concepto:</b> ${concepto}<br>
-      <b>Tipo de pago:</b> ${tipo_pago}<br>
-      ${tipo_pago_descripcion ? `<b>Descripción tipo pago:</b> ${tipo_pago_descripcion}<br>` : ''}
-      ${empresa_a_pagar ? `<b>Empresa a pagar:</b> ${empresa_a_pagar}<br>` : ''}
-      ${nombre_persona ? `<b>Nombre persona:</b> ${nombre_persona}<br>` : ''}
-      ${tipo_cuenta_destino ? `<b>Tipo cuenta destino:</b> ${tipo_cuenta_destino}<br>` : ''}
-      ${tipo_tarjeta ? `<b>Tipo tarjeta:</b> ${tipo_tarjeta}<br>` : ''}
-      ${banco_destino ? `<b>Banco destino:</b> ${banco_destino}<br>` : ''}
-      <b>Frecuencia:</b> ${frecuencia}<br>
-      <b>Siguiente fecha:</b> ${siguiente_fecha}<br>
-      ${fact_recurrente ? `<b>Factura adjunta:</b> ${fact_recurrente}<br>` : ''}
+      <table style='border-collapse:collapse; width:100%; max-width:420px; background:#f9fafb; border-radius:8px; overflow:hidden; font-size:15px; margin:16px 0;'>
+        <tr style='background:#2563eb; color:#fff;'><th colspan='2' style='padding:10px 0; font-size:16px;'>Detalles de la Plantilla Recurrente</th></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Departamento:</td><td style='padding:8px 12px;'>${departamento}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Monto:</td><td style='padding:8px 12px;'>$${monto}</td></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Cuenta destino:</td><td style='padding:8px 12px;'>${cuenta_destino}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Concepto:</td><td style='padding:8px 12px;'>${concepto}</td></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Tipo de pago:</td><td style='padding:8px 12px;'>${tipo_pago}</td></tr>
+        <tr style='background:#f1f5f9;'><td style='padding:8px 12px; font-weight:bold;'>Frecuencia:</td><td style='padding:8px 12px;'>${frecuencia}</td></tr>
+        <tr><td style='padding:8px 12px; font-weight:bold;'>Siguiente fecha:</td><td style='padding:8px 12px;'>${siguiente_fecha}</td></tr>
+      </table>
     `;
 
     // Enviar correo al admin_general
@@ -59,10 +55,10 @@ exports.crearRecurrente = async (req, res) => {
       const admin = admins[0];
       await enviarCorreo({
         para: admin.email,
-        asunto: 'Nueva plantilla recurrente creada en Bechapra',
+        asunto: 'Nueva plantilla recurrente registrada',
         nombre: admin.nombre,
         link: url,
-        mensaje: `Se ha creado una nueva plantilla recurrente por el usuario ID ${id_usuario}:<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>Nueva plantilla recurrente registrada</h2><p>El usuario <b>ID ${id_usuario}</b> ha registrado una nueva plantilla recurrente:</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Consulta la plataforma para más detalles.</p></div>`
       });
     }
 
@@ -73,7 +69,7 @@ exports.crearRecurrente = async (req, res) => {
     for (const ap of aprobadores) {
       await NotificacionService.crearNotificacion({
         id_usuario: ap.id_usuario,
-        mensaje: "📋 Nueva plantilla recurrente pendiente de aprobación.",
+        mensaje: `📋 Tienes una nueva plantilla recurrente pendiente de aprobación por <b>ID ${id_usuario}</b> por <b>$${monto}</b>.`,
         correo: ap.email,
       });
     }
@@ -82,14 +78,14 @@ exports.crearRecurrente = async (req, res) => {
     const [solicitante] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
     await enviarCorreo({
       para: solicitante[0]?.email,
-      asunto: 'Plantilla recurrente registrada exitosamente',
+      asunto: '¡Tu plantilla recurrente ha sido registrada!',
       nombre: solicitante[0]?.nombre,
       link: url,
-      mensaje: `¡Tu plantilla recurrente fue registrada exitosamente!<br>${detallesRecurrente}`
+      mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>¡Plantilla recurrente registrada!</h2><p>Hola <b>${solicitante[0]?.nombre}</b>,</p><p>Tu plantilla recurrente ha sido registrada correctamente y está en proceso de revisión.</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Puedes consultar el estado en la plataforma.</p></div>`
     });
     await NotificacionService.crearNotificacion({
       id_usuario,
-      mensaje: "¡Tu plantilla recurrente fue registrada exitosamente!",
+      mensaje: `✅ ¡Tu plantilla recurrente fue registrada exitosamente!`,
     });
     res.status(201).json({ message: "Plantilla recurrente creada correctamente" });
   } catch (err) {
@@ -154,6 +150,10 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
       `;
       const { enviarCorreo } = require('../services/correoService');
 
+      // Obtener nombre del pagador
+      const [pagador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
+      const nombrePagador = pagador[0]?.nombre || '';
+
       // Correo al admin
       if (adminRows.length > 0) {
         const admin = adminRows[0];
@@ -162,7 +162,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
           asunto: 'Plantilla recurrente pagada',
           nombre: admin.nombre,
           link: url,
-          mensaje: `El pagador ID ${id_pagador} ha <b>marcado como pagada</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+          mensaje: `El pagador <b>${nombrePagador || id_pagador}</b> ha <b>marcado como pagada</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
         });
       }
       // Correo al aprobador (si existe)
@@ -189,7 +189,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
       // Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
-        mensaje: "💸 Tu pago recurrente ha sido marcado como pagado.",
+        mensaje: `💸 Tu pago recurrente ha sido marcado como pagado por <b>${nombrePagador || 'el pagador'}</b>.`,
         correo: emailSolic,
       });
 
@@ -197,16 +197,15 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
       if (id_aprobador && emailAprob) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: "💸 Se pagó la plantilla recurrente que aprobaste.",
+          mensaje: nombrePagador ? `💸 <b>${nombrePagador}</b> marcó como pagada la plantilla recurrente que aprobaste.` : "💸 Se pagó la plantilla recurrente que aprobaste.",
           correo: emailAprob,
         });
       }
 
       // Pagador (su propio historial)
-      const [pagador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
       await NotificacionService.crearNotificacion({
         id_usuario: id_pagador,
-        mensaje: `✅ Marcaste como pagada la plantilla recurrente (ID: ${id}).`,
+        mensaje: `✅ Marcaste como pagada la plantilla recurrente correctamente.`,
         correo: pagador[0]?.email
       });
     }
@@ -300,7 +299,7 @@ exports.aprobarRecurrente = async (req, res) => {
         asunto: 'Plantilla recurrente aprobada',
         nombre: admin.nombre,
         link: url,
-        mensaje: `El aprobador ID ${id_usuario} ha <b>aprobado</b> una plantilla recurrente:<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#22c55e;'>Plantilla recurrente aprobada</h2><p>El aprobador <b>${aprobadorRows[0]?.nombre || id_usuario}</b> ha aprobado una plantilla recurrente:</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Consulta la plataforma para más información.</p></div>`
       });
     }
     // Correo al aprobador
@@ -308,10 +307,10 @@ exports.aprobarRecurrente = async (req, res) => {
       const aprobador = aprobadorRows[0];
       await enviarCorreo({
         para: aprobador.email,
-        asunto: 'Confirmación de aprobación de plantilla recurrente',
+        asunto: '¡Aprobación registrada!',
         nombre: aprobador.nombre,
         link: url,
-        mensaje: `Has <b>aprobado</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#2563eb;'>¡Aprobación registrada!</h2><p>Hola <b>${aprobador.nombre}</b>,</p><p>Has aprobado la siguiente plantilla recurrente:</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Puedes consultar el historial en la plataforma.</p></div>`
       });
     }
     // Correo al solicitante
@@ -319,10 +318,10 @@ exports.aprobarRecurrente = async (req, res) => {
       const solicitante = solicitanteRows[0];
       await enviarCorreo({
         para: solicitante.email,
-        asunto: 'Tu plantilla recurrente fue aprobada',
+        asunto: '¡Tu plantilla recurrente fue aprobada!',
         nombre: solicitante.nombre,
         link: url,
-        mensaje: `¡Tu plantilla recurrente fue <b>aprobada</b>!<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#22c55e;'>¡Felicidades, tu plantilla recurrente fue aprobada!</h2><p>Hola <b>${solicitante.nombre}</b>,</p><p>Nos complace informarte que tu plantilla recurrente ha sido aprobada y está lista para el siguiente ciclo.</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Puedes consultar el estado en la plataforma.</p></div>`
       });
     }
 
@@ -330,7 +329,7 @@ exports.aprobarRecurrente = async (req, res) => {
     if (solicitanteRows.length > 0) {
       await NotificacionService.crearNotificacion({
         id_usuario: recurrente.id_usuario,
-        mensaje: "✅ Tu plantilla recurrente fue aprobada.",
+        mensaje: `✅ ¡Tu plantilla recurrente fue aprobada exitosamente!`,
         correo: solicitanteRows[0].email,
       });
     }
@@ -341,7 +340,7 @@ exports.aprobarRecurrente = async (req, res) => {
     for (const pg of pagadores) {
       await NotificacionService.crearNotificacion({
         id_usuario: pg.id_usuario,
-        mensaje: "📝 Nueva plantilla recurrente aprobada: solicitudes futuras listas para pago.",
+        mensaje: `📝 Nueva plantilla recurrente aprobada para pago de <b>${solicitanteRows[0]?.nombre || recurrente.id_usuario}</b> por <b>$${recurrente.monto}</b>.`,
         correo: pg.email,
       });
     }
@@ -392,7 +391,7 @@ exports.rechazarRecurrente = async (req, res) => {
         asunto: 'Plantilla recurrente rechazada',
         nombre: admin.nombre,
         link: url,
-        mensaje: `El aprobador ID ${id_usuario} ha <b>rechazado</b> una plantilla recurrente:<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Plantilla recurrente rechazada</h2><p>El aprobador <b>${aprobadorRows[0]?.nombre || id_usuario}</b> ha rechazado una plantilla recurrente:</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Consulta la plataforma para más información.</p></div>`
       });
     }
     // Correo al aprobador
@@ -400,10 +399,10 @@ exports.rechazarRecurrente = async (req, res) => {
       const aprobador = aprobadorRows[0];
       await enviarCorreo({
         para: aprobador.email,
-        asunto: 'Confirmación de rechazo de plantilla recurrente',
+        asunto: 'Rechazo de plantilla recurrente registrado',
         nombre: aprobador.nombre,
         link: url,
-        mensaje: `Has <b>rechazado</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Rechazo registrado</h2><p>Has rechazado la siguiente plantilla recurrente:</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Consulta el historial en la plataforma.</p></div>`
       });
     }
     // Correo al solicitante
@@ -414,7 +413,7 @@ exports.rechazarRecurrente = async (req, res) => {
         asunto: 'Tu plantilla recurrente fue rechazada',
         nombre: solicitante.nombre,
         link: url,
-        mensaje: `Tu plantilla recurrente fue <b>rechazada</b>.<br>${detallesRecurrente}`
+        mensaje: `<div style='font-family:Arial,sans-serif;'><h2 style='color:#ef4444;'>Tu plantilla recurrente fue rechazada</h2><p>Hola <b>${solicitante.nombre}</b>,</p><p>Lamentamos informarte que tu plantilla recurrente fue rechazada.</p>${detallesRecurrente}<p style='color:#888;font-size:13px;'>Puedes consultar los detalles en la plataforma.</p></div>`
       });
     }
 
@@ -422,7 +421,7 @@ exports.rechazarRecurrente = async (req, res) => {
     if (solicitanteRows.length > 0) {
       await NotificacionService.crearNotificacion({
         id_usuario: recurrente.id_usuario,
-        mensaje: "❌ Tu plantilla recurrente fue rechazada.",
+        mensaje: `❌ Tu plantilla recurrente fue rechazada por ${aprobadorRows[0]?.nombre ? `<b>${aprobadorRows[0].nombre}</b>` : 'el aprobador'}.`,
         correo: solicitanteRows[0].email,
       });
     }

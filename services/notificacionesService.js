@@ -1,6 +1,6 @@
 const pool = require("../db/connection");
 const correoService = require("./correoService");
-const ws = require("../ws"); // aún no lo creamos, pero lo harás después
+const ws = require("../ws"); 
 
 // Crear notificación y (opcionalmente) enviarla por WebSocket y correo
 exports.crearNotificacion = async ({
@@ -72,7 +72,6 @@ exports.obtenerNotificaciones = async (id_usuario) => {
     mensaje: row.mensaje,
     leida: !!row.leida,
     fecha: row.fecha_creacion,
-    // Se pueden agregar más campos si el frontend los requiere
   }));
 };
 

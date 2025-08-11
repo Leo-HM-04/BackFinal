@@ -66,10 +66,24 @@ const createUsuario = async (req, res) => {
     const url = 'https://bechapra.com.mx'; // Cambia por la URL real de la plataforma si es necesario
     await enviarCorreo({
       para: email,
-      asunto: '¡Bienvenido/a a la plataforma Bechapra!',
+      asunto: '¡Bienvenido/a a Bechapra!',
       nombre,
       link: url,
-      mensaje: `¡Hola ${nombre}!<br>Tu cuenta ha sido creada exitosamente.<br>Accede a la plataforma y comienza a gestionar tus solicitudes.`
+      mensaje: `
+        <div style="font-family: Arial, sans-serif; color: #222;">
+          <h2 style="color: #2563eb;">¡Bienvenido/a a <span style="color:#0ea5e9;">Bechapra</span>!</h2>
+          <p>Hola <b>${nombre}</b>,</p>
+          <p>Nos complace informarte que tu cuenta ha sido creada exitosamente.</p>
+          <ul>
+            <li>Accede a la plataforma para gestionar tus solicitudes y aprovechar todos nuestros servicios.</li>
+            <li>Si tienes dudas, nuestro equipo de soporte está disponible para ayudarte.</li>
+          </ul>
+          <p>
+            <a href="${url}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:5px;">Ir a la plataforma</a>
+          </p>
+          <p style="font-size:12px;color:#888;">Este mensaje es automático, por favor no respondas a este correo.</p>
+        </div>
+      `
     });
 
     // Notificación persistente de bienvenida al usuario creado

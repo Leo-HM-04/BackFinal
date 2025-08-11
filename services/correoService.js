@@ -36,7 +36,7 @@ exports.enviarCorreo = async ({ para, asunto, nombre, link, mensaje }) => {
   `;
   try {
     await transporter.sendMail({
-      from: 'Bechapra Plataforma <enrique.bechapra@gmail.com>',
+      from: 'Bechapra Plataforma <automatizaciones@bechapra.com.mx>',
       to: para,
       subject: asunto,
       html

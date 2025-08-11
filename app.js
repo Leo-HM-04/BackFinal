@@ -1,5 +1,3 @@
-const adminRoutes = require('./routes/admin.routes');
-app.use('/api/admin', adminRoutes);
 const express = require("express");
 const cors = require("cors");
 const app = express();
