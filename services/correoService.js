@@ -26,7 +26,7 @@ exports.enviarCorreo = async ({ para, asunto, nombre, link, mensaje }) => {
         ${mensaje ? `<div style='background:#e0f7fa;padding:16px;border-radius:8px;margin-bottom:16px;'><b>Mensaje:</b><br>${mensaje}</div>` : ''}
         <p style="color: #333; font-size: 15px;">Puedes acceder a la plataforma desde el siguiente enlace:</p>
         <div style="margin: 24px 0; text-align: center;">
-          <a href="${link || 'https://bechapra.com'}" style="background: #1a237e; color: #fff; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: bold;">Ir a la plataforma</a>
+          <a href="${link || 'https://bechapra.com.mx'}" style="background: #1a237e; color: #fff; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: bold;">Ir a la plataforma</a>
         </div>
         <hr style="margin: 32px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #888; font-size: 13px;">Si tienes dudas, responde a este correo o comunícate con soporte.</p>

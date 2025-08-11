@@ -63,7 +63,7 @@ const createUsuario = async (req, res) => {
 
     // Enviar correo de bienvenida profesional al usuario creado
     const { enviarCorreo } = require('../services/correoService');
-    const url = 'https://bechapra.com'; // Cambia por la URL real de la plataforma si es necesario
+    const url = 'https://bechapra.com.mx'; // Cambia por la URL real de la plataforma si es necesario
     await enviarCorreo({
       para: email,
       asunto: '¡Bienvenido/a a la plataforma Bechapra!',
@@ -179,7 +179,7 @@ const updateUsuario = async (req, res) => {
     // Buscar admin_general para notificarle por correo
     const pool = require('../db/connection');
     const { enviarCorreo } = require('../services/correoService');
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
     if (admins.length > 0) {
       const admin = admins[0];
@@ -221,7 +221,7 @@ const deleteUsuario = async (req, res) => {
     // Buscar admin_general para notificarle por correo
     const pool = require('../db/connection');
     const { enviarCorreo } = require('../services/correoService');
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
     if (admins.length > 0) {
       const admin = admins[0];

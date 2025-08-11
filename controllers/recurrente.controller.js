@@ -54,7 +54,7 @@ exports.crearRecurrente = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
       await enviarCorreo({
@@ -140,7 +140,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
 
       // Obtener info de admin
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const detallesRecurrente = `
         <b>ID:</b> ${id}<br>
         <b>Departamento:</b> ${departamento}<br>
@@ -279,7 +279,7 @@ exports.aprobarRecurrente = async (req, res) => {
     const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
     const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
     const [solicitanteRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [recurrente.id_usuario]);
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     const detallesRecurrente = `
       <b>ID:</b> ${recurrente.id_recurrente || recurrente.id}<br>
       <b>Departamento:</b> ${recurrente.departamento}<br>
@@ -370,7 +370,7 @@ exports.rechazarRecurrente = async (req, res) => {
     const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
     const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_usuario]);
     const [solicitanteRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [recurrente.id_usuario]);
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     const detallesRecurrente = `
       <b>ID:</b> ${recurrente.id_recurrente || recurrente.id}<br>
       <b>Departamento:</b> ${recurrente.departamento}<br>
@@ -448,7 +448,7 @@ exports.eliminarRecurrente = async (req, res) => {
     // Enviar correo al admin_general con los detalles
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
       const detallesRecurrente = `
@@ -542,7 +542,7 @@ exports.editarRecurrente = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
       await enviarCorreo({
@@ -599,7 +599,7 @@ exports.obtenerHistorial = async (req, res) => {
         // Enviar correo al admin_general
         const { enviarCorreo } = require('../services/correoService');
         const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-        const url = 'https://bechapra.com';
+        const url = 'https://bechapra.com.mx';
         if (admins.length > 0) {
             const admin = admins[0];
             await enviarCorreo({
@@ -668,7 +668,7 @@ exports.subirFacturaRecurrente = async (req, res) => {
 
       // Obtener info de admin
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const detallesRecurrente = `
         <b>ID:</b> ${id}<br>
         <b>Departamento:</b> ${departamento}<br>
@@ -825,7 +825,7 @@ exports.subirComprobanteRecurrente = async (req, res) => {
     if (det.length) {
       const { idSolicitante, emailSolic, nombreSolic, id_aprobador, emailAprob, nombreAprob, departamento, monto, cuenta_destino, concepto, tipo_pago, frecuencia, siguiente_fecha } = det[0];
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const detallesRecurrente = `
         <b>ID:</b> ${id}<br>
         <b>Departamento:</b> ${departamento}<br>

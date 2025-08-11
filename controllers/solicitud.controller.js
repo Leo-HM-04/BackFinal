@@ -132,7 +132,7 @@ exports.createSolicitud = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
       await enviarCorreo({
@@ -223,7 +223,7 @@ exports.actualizarEstado = async (req, res) => {
     // Obtener info de admin y aprobador
     const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
     const [aprobadorRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_aprobador]);
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     const detallesSolicitud = `
       <b>ID:</b> ${id}<br>
       <b>Departamento:</b> ${departamento}<br>
@@ -400,7 +400,7 @@ exports.marcarComoPagada = async (req, res) => {
 
       // Obtener info de admin
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const detallesSolicitud = `
         <b>ID:</b> ${id}<br>
         <b>Departamento:</b> ${departamento}<br>
@@ -506,7 +506,7 @@ exports.deleteSolicitud = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0 && sol.length) {
       const admin = admins[0];
       await enviarCorreo({
@@ -584,7 +584,7 @@ exports.deleteSolicitudSolicitante = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0 && sol.length) {
       const admin = admins[0];
       await enviarCorreo({
@@ -703,7 +703,7 @@ exports.editarSolicitud = async (req, res) => {
     // Enviar correo al admin_general
     const { enviarCorreo } = require('../services/correoService');
     const [admins] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-    const url = 'https://bechapra.com';
+    const url = 'https://bechapra.com.mx';
     if (admins.length > 0) {
       const admin = admins[0];
       await enviarCorreo({
@@ -771,7 +771,7 @@ exports.subirComprobante = async (req, res) => {
 
       // Obtener info de admin
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const detallesSolicitud = `
         <b>ID:</b> ${id}<br>
         <b>Departamento:</b> ${departamento}<br>
@@ -986,7 +986,7 @@ exports.marcarComoPagadasLote = async (req, res) => {
         [ids]
       );
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const { enviarCorreo } = require('../services/correoService');
       for (const s of solicitudes) {
         const detallesSolicitud = `
@@ -1075,7 +1075,7 @@ exports.rechazarLote = async (req, res) => {
         [...ids]
       );
       const [adminRows] = await pool.query("SELECT email, nombre FROM usuarios WHERE rol = 'admin_general'");
-      const url = 'https://bechapra.com';
+      const url = 'https://bechapra.com.mx';
       const { enviarCorreo } = require('../services/correoService');
       for (const s of solicitudes) {
         const detallesSolicitud = `
