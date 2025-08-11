@@ -18,9 +18,64 @@ async function registrarAccion({ req, accion, entidad, entidadId = null, mensaje
 
   // Usuario que realiza la acción
   const usuario = req.user || {};
-  let mensaje = `El usuario ${usuario.nombre || usuario.id_usuario || 'desconocido'} (${usuario.rol || ''}) ${accion} ${entidad}`;
+  const nombreUsuario = usuario.nombre || `Usuario ID: ${usuario.id_usuario}` || 'Usuario desconocido';
+  const rolUsuario = usuario.rol || 'sin rol';
+  
+  // Crear mensaje más específico según la acción y entidad
+  let mensaje = '';
+  
+  switch (entidad) {
+    case 'solicitud':
+      switch (accion) {
+        case 'creó':
+          mensaje = `📋 ${nombreUsuario} (${rolUsuario}) creó una nueva solicitud`;
+          break;
+        case 'actualizó':
+          mensaje = `📝 ${nombreUsuario} (${rolUsuario}) actualizó una solicitud`;
+          if (mensajeExtra.includes('Aprobada')) {
+            mensaje = `✅ ${nombreUsuario} (${rolUsuario}) aprobó una solicitud`;
+          } else if (mensajeExtra.includes('Rechazada')) {
+            mensaje = `❌ ${nombreUsuario} (${rolUsuario}) rechazó una solicitud`;
+          } else if (mensajeExtra.includes('Pagada')) {
+            mensaje = `💰 ${nombreUsuario} (${rolUsuario}) marcó como pagada una solicitud`;
+          }
+          break;
+        default:
+          mensaje = `📋 ${nombreUsuario} (${rolUsuario}) realizó una acción (${accion}) sobre una solicitud`;
+      }
+      break;
+    case 'usuario':
+      switch (accion) {
+        case 'creó':
+          mensaje = `👤 ${nombreUsuario} (${rolUsuario}) creó un nuevo usuario`;
+          break;
+        case 'actualizó':
+          mensaje = `👤 ${nombreUsuario} (${rolUsuario}) actualizó datos de un usuario`;
+          break;
+        case 'eliminó':
+          mensaje = `🗑️ ${nombreUsuario} (${rolUsuario}) eliminó un usuario`;
+          break;
+        default:
+          mensaje = `👤 ${nombreUsuario} (${rolUsuario}) realizó una acción (${accion}) sobre un usuario`;
+      }
+      break;
+    case 'comprobante':
+      switch (accion) {
+        case 'subió':
+          mensaje = `📄 ${nombreUsuario} (${rolUsuario}) subió un comprobante de pago`;
+          break;
+        default:
+          mensaje = `📄 ${nombreUsuario} (${rolUsuario}) realizó una acción (${accion}) sobre un comprobante`;
+      }
+      break;
+    default:
+      mensaje = `🔧 ${nombreUsuario} (${rolUsuario}) ${accion} ${entidad}`;
+  }
+  
   if (entidadId) mensaje += ` (ID: ${entidadId})`;
-  if (mensajeExtra) mensaje += `. ${mensajeExtra}`;
+  if (mensajeExtra && !mensaje.includes('aprobó') && !mensaje.includes('rechazó') && !mensaje.includes('pagada')) {
+    mensaje += `. ${mensajeExtra}`;
+  }
 
   await notificacionesService.crearNotificacion({
     id_usuario: admin.id_usuario,

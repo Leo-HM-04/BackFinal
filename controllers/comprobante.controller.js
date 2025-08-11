@@ -45,19 +45,54 @@ exports.subirComprobante = async (req, res) => {
       mensajeExtra: `para la solicitud #${id_solicitud}`
     });
 
-    // Notificar al admin
+    // Notificar a usuarios relevantes
     try {
-      const [admins] = await usuarioModel.getAdmins();
-      const notificacionesService = require('../services/notificacionesService');
-      for (const admin of admins) {
+      const pool = require('../db/connection');
+      
+      // Obtener información del solicitante y pagador
+      const [solicitudInfo] = await pool.query(`
+        SELECT s.id_usuario as id_solicitante, s.monto, s.concepto, s.id_aprobador,
+               u_solic.nombre as nombre_solicitante, u_solic.email as email_solicitante,
+               u_aprob.nombre as nombre_aprobador, u_aprob.email as email_aprobador
+        FROM solicitudes_pago s 
+        LEFT JOIN usuarios u_solic ON s.id_usuario = u_solic.id_usuario
+        LEFT JOIN usuarios u_aprob ON s.id_aprobador = u_aprob.id_usuario
+        WHERE s.id_solicitud = ?
+      `, [id_solicitud]);
+
+      if (solicitudInfo.length > 0) {
+        const info = solicitudInfo[0];
+        const nombrePagador = req.user.nombre || 'Pagador';
+
+        // Notificar al solicitante
         await notificacionesService.crearNotificacion({
-          id_usuario: admin.id_usuario,
-          mensaje: `Se subió un comprobante para la solicitud #${id_solicitud}`,
+          id_usuario: info.id_solicitante,
+          mensaje: `📄 ${nombrePagador} subió el comprobante de pago de tu solicitud por $${info.monto} (${info.concepto}).`,
+          correo: info.email_solicitante
         });
+
+        // Notificar al aprobador si existe
+        if (info.id_aprobador) {
+          await notificacionesService.crearNotificacion({
+            id_usuario: info.id_aprobador,
+            mensaje: `📄 ${nombrePagador} subió el comprobante de pago de la solicitud de ${info.nombre_solicitante} por $${info.monto} que aprobaste.`,
+            correo: info.email_aprobador
+          });
+        }
+
+        // Notificar al admin
+        const admin = await usuarioModel.getUsuarioByRol('admin_general');
+        if (admin) {
+          await notificacionesService.crearNotificacion({
+            id_usuario: admin.id_usuario,
+            mensaje: `📄 ${nombrePagador} subió un comprobante de pago para la solicitud de ${info.nombre_solicitante} por $${info.monto}.`,
+            correo: admin.email
+          });
+        }
       }
     } catch (e) {
       // Si falla la notificación, solo loguea
-      console.error('Error notificando admin:', e);
+      console.error('Error enviando notificaciones:', e);
     }
 
     res.status(201).json({ id });

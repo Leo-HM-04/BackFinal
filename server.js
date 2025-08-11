@@ -43,5 +43,5 @@ server.on("upgrade", (request, socket, head) => {
 
 // Iniciar el servidor
 server.listen(PORT, () => {
-  console.log(`Servidor HTTP y WebSocket en http://localhost:${PORT}`);
+  console.log(`Servidor HTTP y WebSocket en http://46.202.177.106:${PORT}`);
 });

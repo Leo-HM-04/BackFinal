@@ -4,6 +4,7 @@
 
 const SolicitudModel = require("../models/solicitud.model");
 const NotificacionService = require("../services/notificacionesService");
+const usuarioModel = require("../models/usuario.model");
 const pool = require("../db/connection");
 
 // ──────────────────────── Obtener listados ────────────────────────
@@ -163,7 +164,7 @@ exports.createSolicitud = async (req, res) => {
     for (const ap of aprobadores) {
       await NotificacionService.crearNotificacion({
         id_usuario: ap.id_usuario,
-        mensaje: `📥 Tienes una nueva solicitud pendiente de aprobación de <b>${nombreSolicNotif}</b> por <b>$${monto}</b>.`,
+        mensaje: `📥 Tienes una nueva solicitud pendiente de aprobación de ${nombreSolicNotif} por $${monto}.`,
         correo: ap.email,
       });
     }
@@ -308,17 +309,18 @@ exports.actualizarEstado = async (req, res) => {
       // 1) Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
   id_usuario: idSolicitante,
-  mensaje: `✅ ¡Felicidades ${nombre}! Tu solicitud fue autorizada por ${aprobadorRows[0]?.nombre ? `<b>${aprobadorRows[0].nombre}</b>` : 'el aprobador'}.`,
+  mensaje: `✅ ¡Felicidades ${nombre}! Tu solicitud fue autorizada por ${aprobadorRows[0]?.nombre ? `${aprobadorRows[0].nombre}` : 'el aprobador'}.`,
   correo: email,
       });
       // 2) Pagadores
       const [pagadores] = await pool.query(
-        "SELECT id_usuario, email FROM usuarios WHERE rol = 'pagador_banca'"
+        "SELECT id_usuario, email, nombre FROM usuarios WHERE rol = 'pagador_banca'"
       );
       for (const pg of pagadores) {
+        const nombreAprobador = aprobadorRows[0]?.nombre || 'un aprobador';
         await NotificacionService.crearNotificacion({
           id_usuario: pg.id_usuario,
-          mensaje: `📝 Nueva solicitud autorizada para pago de <b>${nombre}</b> por <b>$${monto}</b>.`,
+          mensaje: `� Nueva solicitud autorizada para pago: <b>${nombre}</b> por <b>$${monto}</b> (autorizada por <b>${nombreAprobador}</b>)`,
           correo: pg.email,
         });
       }
@@ -326,7 +328,7 @@ exports.actualizarEstado = async (req, res) => {
       if (aprobadorRows.length > 0) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: `✅ ¡Aprobaste exitosamente la solicitud de <b>${nombre}</b> por <b>$${monto}</b>!`,
+          mensaje: `✅ ¡Aprobaste exitosamente la solicitud de ${nombre} por $${monto}!`,
           correo: aprobadorRows[0].email
         });
       }
@@ -364,14 +366,14 @@ exports.actualizarEstado = async (req, res) => {
       // Rechazada → solo solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
   id_usuario: idSolicitante,
-  mensaje: `❌ ${nombre}, tu solicitud fue rechazada por ${aprobadorRows[0]?.nombre ? `<b>${aprobadorRows[0].nombre}</b>` : 'el aprobador'}.`,
+  mensaje: `❌ ${nombre}, tu solicitud fue rechazada por ${aprobadorRows[0]?.nombre ? `${aprobadorRows[0].nombre}` : 'el aprobador'}.`,
   correo: email,
       });
       // Aprobador (notificación in-app)
       if (aprobadorRows.length > 0) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: `❌ Rechazaste la solicitud de <b>${nombre}</b> por <b>$${monto}</b>.`,
+          mensaje: `❌ Rechazaste la solicitud de ${nombre} por $${monto}.`,
           correo: aprobadorRows[0].email
         });
       }
@@ -482,10 +484,14 @@ exports.marcarComoPagada = async (req, res) => {
         });
       }
 
+      // Obtener información del pagador que está marcando como pagada
+      const [pagadorInfo] = await pool.query("SELECT nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
+      const nombrePagador = pagadorInfo[0]?.nombre || 'Pagador';
+
       // Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
-        mensaje: id_aprobador && nombreAprob ? `💸 Tu solicitud ha sido pagada por <b>${nombreAprob}</b>.` : "💸 Tu solicitud ha sido pagada.",
+        mensaje: nombrePagador ? `💸 Tu solicitud por $${monto} ha sido pagada por ${nombrePagador} del departamento de pagos.` : `💸 Tu solicitud por $${monto} ha sido pagada.`,
         correo: emailSolic,
       });
 
@@ -493,7 +499,7 @@ exports.marcarComoPagada = async (req, res) => {
       if (id_aprobador && emailAprob) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: nombrePagador ? `💸 <b>${nombrePagador}</b> marcó como pagada la solicitud que aprobaste.` : "💸 Se pagó la solicitud que aprobaste.",
+          mensaje: nombrePagador ? `💸 ${nombrePagador} pagó la solicitud de ${nombreSolic} por $${monto} que tú aprobaste.` : `💸 Se pagó la solicitud de ${nombreSolic} por $${monto} que aprobaste.`,
           correo: emailAprob,
         });
       }
@@ -502,7 +508,7 @@ exports.marcarComoPagada = async (req, res) => {
       const [pagador] = await pool.query("SELECT email, nombre FROM usuarios WHERE id_usuario = ?", [id_pagador]);
       await NotificacionService.crearNotificacion({
         id_usuario: id_pagador,
-        mensaje: `✅ Marcaste como pagada la solicitud (ID: ${id}).`,
+        mensaje: `✅ Marcaste como pagada la solicitud de <b>${nombreSolic}</b> por <b>$${monto}</b>.`,
         correo: pagador[0]?.email
       });
     }
@@ -853,7 +859,45 @@ exports.subirComprobante = async (req, res) => {
           mensaje: `Se ha subido un comprobante a tu solicitud:<br>${detallesSolicitud}`
         });
       }
+
+      // Notificaciones in-app con más detalles
+      const nombrePagador = req.user.nombre || 'Pagador';
+      
+      // Notificar al solicitante
+      await NotificacionService.crearNotificacion({
+        id_usuario: idSolicitante,
+        mensaje: `📄 ${nombrePagador} subió el comprobante de pago de tu solicitud por $${monto} (${concepto}).`,
+        correo: emailSolic
+      });
+
+      // Notificar al aprobador si existe
+      if (id_aprobador) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: id_aprobador,
+          mensaje: `📄 ${nombrePagador} subió el comprobante de pago de la solicitud de ${nombreSolic} por $${monto} que aprobaste.`,
+          correo: emailAprob
+        });
+      }
+
+      // Notificar al admin
+      const admin = await usuarioModel.getUsuarioByRol('admin_general');
+      if (admin) {
+        await NotificacionService.crearNotificacion({
+          id_usuario: admin.id_usuario,
+          mensaje: `📄 ${nombrePagador} subió un comprobante de pago para la solicitud de ${nombreSolic} por $${monto}.`,
+          correo: admin.email
+        });
+      }
     }
+
+    // Registrar acción
+    await registrarAccion({
+      req,
+      accion: 'subió',
+      entidad: 'comprobante',
+      entidadId: null,
+      mensajeExtra: `para la solicitud #${id}`
+    });
 
     res.json({ message: "Comprobante subido correctamente", soporte_url });
   } catch (err) {

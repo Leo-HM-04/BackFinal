@@ -162,7 +162,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
           asunto: 'Plantilla recurrente pagada',
           nombre: admin.nombre,
           link: url,
-          mensaje: `El pagador <b>${nombrePagador || id_pagador}</b> ha <b>marcado como pagada</b> la siguiente plantilla recurrente:<br>${detallesRecurrente}`
+          mensaje: `El pagador ${nombrePagador || id_pagador} ha marcado como pagada la siguiente plantilla recurrente:<br>${detallesRecurrente}`
         });
       }
       // Correo al aprobador (si existe)
@@ -172,7 +172,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
           asunto: 'Plantilla recurrente pagada',
           nombre: nombreAprob,
           link: url,
-          mensaje: `La plantilla recurrente que aprobaste ha sido <b>pagada</b>:<br>${detallesRecurrente}`
+          mensaje: `La plantilla recurrente que aprobaste ha sido pagada:<br>${detallesRecurrente}`
         });
       }
       // Correo al solicitante
@@ -182,14 +182,14 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
           asunto: 'Tu plantilla recurrente ha sido pagada',
           nombre: nombreSolic,
           link: url,
-          mensaje: `¡Tu plantilla recurrente ha sido <b>pagada</b>!<br>${detallesRecurrente}`
+          mensaje: `¡Tu plantilla recurrente ha sido pagada!<br>${detallesRecurrente}`
         });
       }
 
       // Solicitante (notificación in-app)
       await NotificacionService.crearNotificacion({
         id_usuario: idSolicitante,
-        mensaje: `💸 Tu pago recurrente ha sido marcado como pagado por <b>${nombrePagador || 'el pagador'}</b>.`,
+        mensaje: `💸 Tu pago recurrente ha sido marcado como pagado por ${nombrePagador || 'el pagador'}.`,
         correo: emailSolic,
       });
 
@@ -197,7 +197,7 @@ exports.marcarComoPagadaRecurrente = async (req, res) => {
       if (id_aprobador && emailAprob) {
         await NotificacionService.crearNotificacion({
           id_usuario: id_aprobador,
-          mensaje: nombrePagador ? `💸 <b>${nombrePagador}</b> marcó como pagada la plantilla recurrente que aprobaste.` : "💸 Se pagó la plantilla recurrente que aprobaste.",
+          mensaje: nombrePagador ? `💸 ${nombrePagador} marcó como pagada la plantilla recurrente que aprobaste.` : "💸 Se pagó la plantilla recurrente que aprobaste.",
           correo: emailAprob,
         });
       }

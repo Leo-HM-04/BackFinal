@@ -4,10 +4,10 @@ const mysql = require('mysql2/promise');
 
 async function resetDatabase() {
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'plataforma_solicitudes_pago',
+    host: process.env.DB_HOST || 'srv1505.hstgr.io',
+    user: process.env.DB_USER || 'u995420991_undbechapra',
+    password: process.env.DB_PASSWORD || '19042004Leo',
+    database: process.env.DB_NAME || 'u995420991_plataformaPago',
     multipleStatements: true
   });
 
