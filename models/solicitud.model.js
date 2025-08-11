@@ -18,8 +18,6 @@ exports.getTodas = async () => {
   return resultadoTransformado;
 };
 
-
-
 // Obtener solicitudes de un usuario específico (rol solicitante)
 exports.getPorUsuario = async (id_usuario) => {
   const [rows] = await pool.query(`
@@ -31,7 +29,6 @@ exports.getPorUsuario = async (id_usuario) => {
   return rows;
 };
 
-
 // Obtener solo solicitudes autorizadas (para pagador_banca)
 exports.getAutorizadas = async () => {
   const [rows] = await pool.query(`
@@ -42,7 +39,6 @@ exports.getAutorizadas = async () => {
   `);
   return rows;
 };
-
 
 // Obtener una sola solicitud por ID
 exports.getPorId = async (id_solicitud) => {
@@ -81,8 +77,14 @@ exports.crear = async (datos) => {
       throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
     }
   } else if (tipo_cuenta_destino === 'Tarjeta') {
+    // Débito o Crédito: exactamente 16 dígitos
     if (!/^[0-9]{16}$/.test(cuenta_destino)) {
       throw new Error('La tarjeta debe tener 16 dígitos numéricos');
+    }
+  } else if (tipo_cuenta_destino === 'Cuenta') {
+    // Solo numérico, mínimo 6 dígitos, sin máximo
+    if (!/^[0-9]{6,}$/.test(cuenta_destino)) {
+      throw new Error('El número de cuenta debe tener al menos 6 dígitos numéricos');
     }
   }
 

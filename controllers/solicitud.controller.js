@@ -64,15 +64,15 @@ exports.createSolicitud = async (req, res) => {
     const schema = Joi.object({
       departamento: Joi.string().min(2).max(100).required(),
       monto: Joi.number().positive().required(),
-      cuenta_destino: Joi.string().min(6).max(30).required(),
+      cuenta_destino: Joi.string().min(6).max(100).required(),
       concepto: Joi.string().min(3).max(255).required(),
       tipo_pago: Joi.string().min(2).max(50).optional(),
       tipo_pago_descripcion: Joi.string().allow(null, ''),
       empresa_a_pagar: Joi.string().allow(null, ''),
       nombre_persona: Joi.string().min(2).max(255).required(),
       fecha_limite_pago: Joi.date().iso().optional(),
-      tipo_cuenta_destino: Joi.string().valid('CLABE', 'Tarjeta').required(),
-      tipo_tarjeta: Joi.string().valid('Débito', 'Crédito').allow(null, ''),
+      tipo_cuenta_destino: Joi.string().valid('CLABE', 'Tarjeta', 'Cuenta').required(),
+      tipo_tarjeta: Joi.string().valid('Débito', 'Crédito', 'Cuenta').allow(null, ''),
       banco_destino: Joi.string().max(100).allow(null, '')
     });
     const { error, value } = schema.validate(req.body);
@@ -98,6 +98,11 @@ exports.createSolicitud = async (req, res) => {
       // Tarjeta: 16 dígitos numéricos
       if (!/^[0-9]{16}$/.test(cuenta_destino)) {
         return res.status(400).json({ error: 'El número de tarjeta debe tener exactamente 16 dígitos numéricos.' });
+      }
+    } else if (tipo_cuenta_destino === 'Cuenta') {
+      // Cuenta: mínimo 6 dígitos numéricos
+      if (!/^[0-9]{6,}$/.test(cuenta_destino)) {
+        return res.status(400).json({ error: 'El número de cuenta debe tener al menos 6 dígitos numéricos.' });
       }
     }
 
