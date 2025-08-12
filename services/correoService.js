@@ -1,13 +1,25 @@
 const nodemailer = require("nodemailer");
+require('dotenv').config();
 
-// Transportador para Gmail (usa app password si tienes 2FA activado)
+// Transportador para Hostinger SMTP
 const transporter = nodemailer.createTransport({
-  service: "smtp.hostinger.com",
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || "smtp.hostinger.com",
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: true, // true para puerto 465, false para otros puertos
   auth: {
-    user: "automatizaciones@bechapra.com.mx", // Tu correo real
-    pass: "2~nkeM]+VxxD" // Tu app password
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
+  debug: false, // Puedes activar esto para debug
+  logger: false
+});
+
+// Verificar conexión SMTP al inicializar
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Error en configuración SMTP:", error);
+  } else {
+    console.log("✅ Servidor SMTP listo para enviar correos");
   }
 });
 
@@ -36,15 +48,26 @@ exports.enviarCorreo = async ({ para, asunto, nombre, link, mensaje }) => {
       </div>
     </div>
   `;
+
+  const mailOptions = {
+    from: `Bechapra Plataforma <${process.env.SMTP_USER}>`,
+    to: para,
+    subject: asunto,
+    html
+  };
+
   try {
-    await transporter.sendMail({
-      from: 'Bechapra Plataforma <automatizaciones@bechapra.com.mx>',
-      to: para,
-      subject: asunto,
-      html
-    });
-    console.log(`📧 Correo profesional enviado a ${para}`);
+    console.log(`📧 Intentando enviar correo a ${para}...`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Correo enviado exitosamente a ${para}. ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("❌ Error al enviar correo:", error);
+    console.error("📋 Detalles del error:", {
+      code: error.code,
+      response: error.response,
+      command: error.command
+    });
+    return { success: false, error: error.message };
   }
 };
