@@ -2,10 +2,12 @@ const nodemailer = require("nodemailer");
 
 // Transportador para Gmail (usa app password si tienes 2FA activado)
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: "enrique.bechapra@gmail.com", // Tu correo real
-    pass: "jtjz ueoa vpvr pusk" // Tu app password
+    user: "automatizaciones@bechapra.com.mx", // Tu correo real
+    pass: "2~nkeM]+VxxD" // Tu app password
   }
 });
 
