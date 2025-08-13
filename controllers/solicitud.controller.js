@@ -92,17 +92,17 @@ exports.createSolicitud = async (req, res) => {
     // Validación adicional según tipo_cuenta_destino
     if (tipo_cuenta_destino === 'CLABE') {
       // CLABE: 18 dígitos numéricos
-      if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+      if (!/^[0-9]+$/.test(cuenta_destino)) {
         return res.status(400).json({ error: 'La cuenta CLABE debe tener exactamente 18 dígitos numéricos.' });
       }
     } else if (tipo_cuenta_destino === 'Tarjeta') {
       // Tarjeta: 16 dígitos numéricos
-      if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+      if (!/^[0-9]+$/.test(cuenta_destino)) {
         return res.status(400).json({ error: 'El número de tarjeta debe tener exactamente 16 dígitos numéricos.' });
       }
     } else if (tipo_cuenta_destino === 'Cuenta') {
       // Cuenta: mínimo 6 dígitos numéricos
-      if (!/^[0-9]{6,}$/.test(cuenta_destino)) {
+      if (!/^[0-9]+$/.test(cuenta_destino)) {
         return res.status(400).json({ error: 'El número de cuenta debe tener al menos 6 dígitos numéricos.' });
       }
     }

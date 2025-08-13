@@ -62,18 +62,18 @@ exports.crear = async (datos) => {
   } = datos;
   // Validar formato según tipo de cuenta destino
   if (tipo_cuenta_destino === 'CLABE') {
-    if (!/^[0-9]{18}$/.test(cuenta_destino)) {
+    if (!/^[0-9]+$/.test(cuenta_destino)) {
       throw new Error('La cuenta CLABE debe tener 18 dígitos numéricos');
     }
   } else if (tipo_cuenta_destino === 'Tarjeta') {
     if (tipo_tarjeta === 'Cuenta') {
       // Solo numérico, mínimo 6 dígitos, sin máximo
-      if (!/^[0-9]{6,}$/.test(cuenta_destino)) {
+      if (!/^[0-9]+$/.test(cuenta_destino)) {
         throw new Error('El número de cuenta debe tener al menos 6 dígitos numéricos');
       }
     } else {
       // Débito o Crédito: exactamente 16 dígitos
-      if (!/^[0-9]{16}$/.test(cuenta_destino)) {
+      if (!/^[0-9]+$/.test(cuenta_destino)) {
         throw new Error('La tarjeta debe tener 16 dígitos numéricos');
       }
     }
