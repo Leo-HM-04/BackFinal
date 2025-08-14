@@ -71,7 +71,7 @@ exports.createSolicitud = async (req, res) => {
       tipo_pago_descripcion: Joi.string().allow(null, ''),
       empresa_a_pagar: Joi.string().allow(null, ''),
       nombre_persona: Joi.string().min(2).max(255).required(),
-      fecha_limite_pago: Joi.date().iso().optional(),
+      fecha_limite_pago: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
       tipo_cuenta_destino: Joi.string().valid('CLABE', 'Tarjeta', 'Cuenta').required(),
       tipo_tarjeta: Joi.string().valid('Débito', 'Crédito', 'Cuenta').allow(null, ''),
       banco_destino: Joi.string().max(100).allow(null, '')
