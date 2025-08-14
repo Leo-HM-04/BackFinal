@@ -99,6 +99,13 @@ exports.createViatico = async (req, res) => {
     const datos = await schema.validateAsync(req.body, { convert: true });
     console.log('✅ Datos validados:', datos);
 
+    // Procesar fecha_limite_pago para evitar problemas de zona horaria
+    if (datos.fecha_limite_pago) {
+      const [year, month, day] = datos.fecha_limite_pago.split('-').map(Number);
+      const fechaLocal = new Date(year, month - 1, day);
+      datos.fecha_limite_pago = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    }
+
     console.log('💾 Creando viático en la base de datos...');
     const viatico = await ViaticoModel.crear(datos);
     console.log('✅ Viático creado:', viatico);
@@ -156,13 +163,23 @@ exports.editarViatico = async (req, res) => {
       empresa_a_pagar,
       nombre_persona
     } = req.body;
+
+    // Procesar fecha_limite_pago para evitar problemas de zona horaria
+    let fechaLimiteProcesada = fecha_limite_pago;
+    if (fecha_limite_pago) {
+      // Asegurar que la fecha se trate como fecha local, no UTC
+      const [year, month, day] = fecha_limite_pago.split('-').map(Number);
+      const fechaLocal = new Date(year, month - 1, day);
+      fechaLimiteProcesada = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    }
+
     const datos = {
       departamento,
       monto,
       cuenta_destino,
       concepto,
       tipo_pago,
-      fecha_limite_pago,
+      fecha_limite_pago: fechaLimiteProcesada,
       tipo_cuenta_destino,
       tipo_tarjeta,
       banco_destino,
