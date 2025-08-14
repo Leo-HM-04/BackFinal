@@ -24,7 +24,8 @@ const departamentos = [
   'comercial',
   'atencion a clientes',
   'tesoreria',
-  'nomina'
+  'nomina',
+  'atraccion de talento'
 ];
 
 exports.getDepartamentos = (req, res) => {

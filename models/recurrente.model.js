@@ -201,7 +201,8 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     'comercial': 'CM',
     'atencion a clientes': 'AC',
     'tesorería': 'TS',
-    'nomina': 'NM'
+    'nomina': 'NM',
+    'atraccion de talento': 'AT'
   };
   const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
 

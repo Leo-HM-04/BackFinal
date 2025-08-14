@@ -106,7 +106,8 @@ exports.crear = async (datos) => {
     'comercial': 'CM',
     'atencion a clientes': 'AC',
     'tesoreria': 'TS',
-    'nomina': 'NM'
+    'nomina': 'NM',
+    'atraccion de talento': 'AT'
   };
   const abrev = abreviaturas[departamento?.toLowerCase?.()] || 'XX';
 
@@ -175,7 +176,8 @@ exports.editarViaticoSiPendiente = async (id_viatico, id_usuario, datos, esAdmin
       'comercial': 'CM',
       'atencion a clientes': 'AC',
       'tesoreria': 'TS',
-      'nomina': 'NM'
+      'nomina': 'NM',
+      'atraccion de talento': 'AT'
     };
     const abrev = abreviaturas[nuevoDepartamento?.toLowerCase?.()] || 'XX';
     const [rows] = await pool.query(
