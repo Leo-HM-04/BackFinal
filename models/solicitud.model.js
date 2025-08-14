@@ -205,7 +205,7 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
       'vinculacion': 'VN',
       'administracion': 'AD',
       'ti': 'TI',
-      'automatizaciones': 'AT',
+      'automatizaciones': 'AU',
       'comercial': 'CM',
       'atencion a clientes': 'AC',
       'tesorería': 'TS',
@@ -214,8 +214,8 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
     };
     const abrev = abreviaturas[datos.departamento.toLowerCase()] || 'XX';
     const [rows] = await pool.query(
-      `SELECT folio FROM solicitudes_pago WHERE folio LIKE ? ORDER BY id_solicitud DESC LIMIT 1`,
-      [`${abrev}-%`]
+      `SELECT folio FROM solicitudes_pago WHERE folio LIKE ? AND id_solicitud != ? ORDER BY CAST(SUBSTRING(folio, CHAR_LENGTH(?) + 2) AS UNSIGNED) DESC LIMIT 1`,
+      [`${abrev}-%`, id_solicitud, abrev]
     );
     let numero = 1;
     if (rows.length > 0 && rows[0].folio) {
