@@ -73,7 +73,9 @@ exports.crearRecurrente = async (datos) => {
     'comercial': 'CM',
     'atencion a clientes': 'AC',
     'tesorería': 'TS',
-    'nomina': 'NM'
+    'nomina': 'NM',
+    'atraccion de talento': 'AT',
+    'direccion general': 'DG'
   };
   const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
 
@@ -202,7 +204,8 @@ exports.editarRecurrenteSiPendiente = async (id_recurrente, id_usuario, datos) =
     'atencion a clientes': 'AC',
     'tesorería': 'TS',
     'nomina': 'NM',
-    'atraccion de talento': 'AT'
+    'atraccion de talento': 'AT',
+    'direccion general': 'DG'
   };
   const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
 

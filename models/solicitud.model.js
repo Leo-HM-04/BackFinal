@@ -101,7 +101,8 @@ exports.crear = async (datos) => {
     'atencion a clientes': 'AC',
     'tesorería': 'TS',
     'nomina': 'NM',
-    'atraccion de talento': 'AT'
+    'atraccion de talento': 'AT',
+    'direccion general': 'DG'
   };
   const abrev = abreviaturas[departamento.toLowerCase()] || 'XX';
 
@@ -210,7 +211,8 @@ exports.editarSolicitudSiPendiente = async (id_solicitud, id_usuario, datos, esA
       'atencion a clientes': 'AC',
       'tesorería': 'TS',
       'nomina': 'NM',
-      'atraccion de talento': 'AT'
+      'atraccion de talento': 'AT',
+      'direccion general': 'DG'
     };
     const abrev = abreviaturas[datos.departamento.toLowerCase()] || 'XX';
     const [rows] = await pool.query(

@@ -329,7 +329,7 @@ exports.actualizarEstado = async (req, res) => {
         const nombreAprobador = aprobadorRows[0]?.nombre || 'un aprobador';
         await NotificacionService.crearNotificacion({
           id_usuario: pg.id_usuario,
-          mensaje: `� Nueva solicitud autorizada para pago: <b>${nombre}</b> por <b>$${monto}</b> (autorizada por <b>${nombreAprobador}</b>)`,
+          mensaje: `Nueva solicitud autorizada para pago: ${nombre} por $${monto} (autorizada por ${nombreAprobador})`,
           correo: pg.email,
         });
       }
