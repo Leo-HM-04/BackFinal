@@ -96,7 +96,7 @@ exports.crear = async (datos) => {
     'vinculacion': 'VN',
     'administracion': 'AD',
     'ti': 'TI',
-    'automatizaciones': 'AT',
+    'automatizaciones': 'AU',
     'comercial': 'CM',
     'atencion a clientes': 'AC',
     'tesorería': 'TS',
